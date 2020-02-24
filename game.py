@@ -1,18 +1,20 @@
 import pygame
 import random
-import time
 import math
-from tqdm import tqdm
 import numpy as np
 
+green = (0, 255, 0)
+red = (255, 0, 0)
+black = (0, 0, 0)
+white = (255, 255, 255)
 
 def display_snake(snake_position, display):
     for position in snake_position:
-        pygame.draw.rect(display, (255, 0, 0), pygame.Rect(position[0], position[1], 10, 10))
+        pygame.draw.rect(display, red, pygame.Rect(position[0], position[1], 10, 10))
 
 
 def display_apple(apple_position, display):
-    pygame.draw.rect(display, (0, 255, 0), pygame.Rect(apple_position[0], apple_position[1], 10, 10))
+    pygame.draw.rect(display, green, pygame.Rect(apple_position[0], apple_position[1], 10, 10))
 
 
 def starting_positions():
@@ -23,10 +25,8 @@ def starting_positions():
 
     return snake_start, snake_position, apple_position, score
 
-
 def apple_distance_from_snake(apple_position, snake_position):
     return np.linalg.norm(np.array(apple_position) - np.array(snake_position[0]))
-
 
 def generate_snake(snake_start, snake_position, apple_position, button_direction, score):
     if button_direction == 1:
@@ -47,7 +47,6 @@ def generate_snake(snake_start, snake_position, apple_position, button_direction
         snake_position.pop()
 
     return snake_position, apple_position, score
-
 
 def collision_with_apple(apple_position, score):
     apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
@@ -91,20 +90,13 @@ def is_direction_blocked(snake_position, current_direction_vector):
     else:
         return 0
 
+def generate_random_direction(snake_position):
 
-def generate_random_direction(snake_position, angle_with_apple):
-    direction = 0
-    if angle_with_apple > 0:
-        direction = 1
-    elif angle_with_apple < 0:
-        direction = -1
-    else:
-        direction = 0
+    direction = random.randint(-1, 1)
 
-    return direction_vector(snake_position, angle_with_apple, direction)
+    return direction, direction_vector(snake_position, direction)
 
-
-def direction_vector(snake_position, angle_with_apple, direction):
+def direction_vector(snake_position, direction):
     current_direction_vector = np.array(snake_position[0]) - np.array(snake_position[1])
     left_direction_vector = np.array([current_direction_vector[1], -current_direction_vector[0]])
     right_direction_vector = np.array([-current_direction_vector[1], current_direction_vector[0]])
@@ -118,8 +110,7 @@ def direction_vector(snake_position, angle_with_apple, direction):
 
     button_direction = generate_button_direction(new_direction)
 
-    return direction, button_direction
-
+    return button_direction
 
 def generate_button_direction(new_direction):
     button_direction = 0
@@ -133,7 +124,6 @@ def generate_button_direction(new_direction):
         button_direction = 3
 
     return button_direction
-
 
 def angle_with_apple(snake_position, apple_position):
     apple_direction_vector = np.array(apple_position) - np.array(snake_position[0])
@@ -155,14 +145,12 @@ def angle_with_apple(snake_position, apple_position):
             0] * snake_direction_vector_normalized[0]) / math.pi
     return angle, snake_direction_vector, apple_direction_vector_normalized, snake_direction_vector_normalized
 
-
 def play_game(snake_start, snake_position, apple_position, button_direction, score, display, clock):
-    crashed = False
-    while crashed is not True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                crashed = True
-        display.fill((255, 255, 255))
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            return True, snake_position, apple_position, score
+    while True:
+        display.fill(white)
 
         display_apple(apple_position, display)
         display_snake(snake_position, display)
@@ -171,6 +159,6 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
                                                                button_direction, score)
         pygame.display.set_caption("SCORE: " + str(score))
         pygame.display.update()
-        clock.tick(50000)
+        clock.tick(1)
 
-        return snake_position, apple_position, score
+        return False, snake_position, apple_position, score
