@@ -17,9 +17,11 @@ def display_apple(apple_position, display):
 
 def starting_positions():
     snake_start = [100, 100]
-    snake_position = [[100, 100], [90, 100], [80, 100]]
+    snake_position = []
+    snake_position = [[100, 110], [100, 120], [100, 130]]
+    score = 10
     apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
-    score = 3
+    
 
     return snake_start, snake_position, apple_position, score
 
@@ -157,11 +159,11 @@ def angle_with_apple(snake_position, apple_position):
 
 
 def play_game(snake_start, snake_position, apple_position, button_direction, score, display, clock):
-    crashed = False
-    while crashed is not True:
+    
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                crashed = True
+                return True, snake_position, apple_position, score
+                
         display.fill((255, 255, 255))
 
         display_apple(apple_position, display)
@@ -171,6 +173,5 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
                                                                button_direction, score)
         pygame.display.set_caption("SCORE: " + str(score))
         pygame.display.update()
-        clock.tick(50)
-
-        return snake_position, apple_position, score
+        clock.tick(1)
+        return False, snake_position, apple_position, score

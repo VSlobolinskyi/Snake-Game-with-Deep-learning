@@ -15,7 +15,7 @@ from keras.models import model_from_json
 def run_game_with_ML(model, display, clock):
     max_score = 3
     avg_score = 0
-    test_games = 1000
+    test_games = 20
     steps_per_game = 2000
 
     for _ in range(test_games):
