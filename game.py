@@ -19,7 +19,7 @@ def starting_positions():
     snake_start = [100, 100]
     snake_position = []
     snake_position = [[100, 110], [100, 120], [100, 130]]
-    score = 10
+    score = 3
     apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
     
 
@@ -173,5 +173,5 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
                                                                button_direction, score)
         pygame.display.set_caption("SCORE: " + str(score))
         pygame.display.update()
-        clock.tick(1)
+        clock.tick(0)
         return False, snake_position, apple_position, score
