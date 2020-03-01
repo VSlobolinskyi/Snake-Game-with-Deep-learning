@@ -1,5 +1,5 @@
 from game import *
-from training_data import generate_training_data
+from nn_behavior import generate_training_data
 
 from keras.models import Sequential
 from keras.layers import Dense

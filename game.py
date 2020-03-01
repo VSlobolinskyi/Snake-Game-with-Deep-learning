@@ -7,21 +7,25 @@ green = (0, 255, 0)
 red = (255, 0, 0)
 black = (0, 0, 0)
 white = (255, 255, 255)
+yellow = (255,220,50)
+orange = (255,220,50)
 
 def display_snake(snake_position, display):
-    for position in snake_position:
-        pygame.draw.rect(display, red, pygame.Rect(position[0], position[1], 10, 10))
-
+    for position in snake_position[1:]:
+        pygame.draw.rect(display, yellow, pygame.Rect(position[0], position[1], 10, 10))
+    pygame.draw.rect(display, orange, pygame.Rect(snake_position[0][0], snake_position[0][1], 10, 10))
 
 def display_apple(apple_position, display):
     pygame.draw.rect(display, green, pygame.Rect(apple_position[0], apple_position[1], 10, 10))
 
-
 def starting_positions():
-    snake_start = [100, 100]
-    snake_position = [[100, 100], [90, 100], [80, 100]]
+    snake_start = [200, 100]
+    snake_position = []
+    score = 14
+    for i in range(score):
+        snake_position.append([200-(i)*10, 100])
+    print('\n', snake_position)
     apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
-    score = 3
 
     return snake_start, snake_position, apple_position, score
 

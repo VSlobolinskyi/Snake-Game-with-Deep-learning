@@ -22,12 +22,6 @@ def generate_training_data(display, clock):
             button_direction, training_data_y = generate_training_data_y(snake_position, direction,
                                                                          training_data_y)
 
-            if (is_front_blocked == 1 and direction == 0) or \
-                    (is_left_blocked == 1 and direction == -1) or \
-                    (is_right_blocked == 1 and direction == 1):
-                print('Exit game with collision!')
-                break
-
             training_data_x.append(
                 [is_left_blocked, is_front_blocked, is_right_blocked, apple_direction_vector_normalized[0],
                  snake_direction_vector_normalized[0], apple_direction_vector_normalized[1],
@@ -36,10 +30,16 @@ def generate_training_data(display, clock):
             quit_game, snake_position, apple_position, score = play_game(snake_start, snake_position, apple_position,
                                                               button_direction, score, display, clock)
             if quit_game:
-                return
+                return training_data_x, training_data_y
 
             if _ == steps_per_game - 1:
                 print('Exit game after 2000 steps!')
+
+            if (is_front_blocked == 1 and direction == 0) or \
+                    (is_left_blocked == 1 and direction == -1) or \
+                    (is_right_blocked == 1 and direction == 1):
+                print('\nExit game with collision! Direction: ', direction)
+                break
 
     return training_data_x, training_data_y
 
