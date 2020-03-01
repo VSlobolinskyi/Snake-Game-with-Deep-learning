@@ -8,7 +8,10 @@ red = (255, 0, 0)
 black = (0, 0, 0)
 white = (255, 255, 255)
 yellow = (255,220,50)
-orange = (255,220,50)
+orange = (255,165,0)
+display_width = 500
+display_height = 500
+cell_size = 10
 
 def display_snake(snake_position, display):
     for position in snake_position[1:]:
@@ -24,7 +27,6 @@ def starting_positions():
     score = 14
     for i in range(score):
         snake_position.append([200-(i)*10, 100])
-    print('\n', snake_position)
     apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
 
     return snake_start, snake_position, apple_position, score
@@ -66,7 +68,6 @@ def collision_with_boundaries(snake_start):
 
 
 def collision_with_self(snake_start, snake_position):
-    # snake_start = snake_position[0]
     if snake_start in snake_position[1:]:
         return 1
     else:
@@ -117,15 +118,13 @@ def direction_vector(snake_position, direction):
     return button_direction
 
 def generate_button_direction(new_direction):
-    button_direction = 0
+    button_direction = 3
     if new_direction.tolist() == [10, 0]:
         button_direction = 1
-    elif new_direction.tolist() == [-10, 0]:
+    if new_direction.tolist() == [-10, 0]:
         button_direction = 0
-    elif new_direction.tolist() == [0, 10]:
+    if new_direction.tolist() == [0, 10]:
         button_direction = 2
-    else:
-        button_direction = 3
 
     return button_direction
 
