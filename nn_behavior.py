@@ -41,7 +41,9 @@ def generate_training_data(model, display, clock):
             collision = (is_front_blocked == 1 and direction == 0) or \
                     (is_left_blocked == 1 and direction == -1) or \
                     (is_right_blocked == 1 and direction == 1)
+
             x, y = get_training_data(collision, direction, snake_position, apple_position)
+
             for item in x:
                 training_data_x.append(item)
             for item in y:
@@ -116,7 +118,8 @@ def get_training_data(collision, direction, snake_position, apple_position):
     
     return x_to_add, y_to_add
 
-def get_predicted_direction(direction):
-    for i in range(3):
-        if i-1 != direction:
-            return i-1
+def get_predicted_direction(wrong_direction):
+    direction = random.randint(-1, 1)
+    while direction == wrong_direction:
+        direction = random.randint(-1, 1)
+    return direction

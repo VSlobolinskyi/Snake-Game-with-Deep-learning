@@ -14,6 +14,11 @@ RIGHT -> button_direction = 1
 DOWN ->button_direction = 2
 UP -> button_direction = 3
 '''
+'''
+LEFT -> direction = -1
+FORWARD -> direction = 0
+RIGHT ->button_direction = 1
+'''
 
 model = Sequential()
 model.add(Dense(250, input_dim=display_width*display_height, activation='relu'))
