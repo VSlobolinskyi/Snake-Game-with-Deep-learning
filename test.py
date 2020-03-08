@@ -15,7 +15,7 @@ from keras.models import model_from_json
 def run_game_with_ML(model, display, clock):
     max_score = 3
     avg_score = 0
-    test_games = 20
+    test_games = 100
     steps_per_game = 2000
 
     for _ in range(test_games):
@@ -57,8 +57,10 @@ def run_game_with_ML(model, display, clock):
             if collision_with_boundaries(snake_position[0]) == 1 or collision_with_self(next_step.tolist(),
                                                                                         snake_position) == 1:
                 break
-            snake_position, apple_position, score = play_game(snake_start, snake_position, apple_position,
+            quitGame, snake_position, apple_position, score = play_game(snake_start, snake_position, apple_position,
                                                               button_direction, score, display, clock)
+            if quitGame:
+                return
 
             if score > max_score:
                 max_score = score

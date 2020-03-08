@@ -6,24 +6,29 @@ from tqdm import tqdm
 import numpy as np
 import math
 from random import randrange 
+import tensorflow as tf
 
 def display_snake(snake_position, display):
     for position in snake_position:
         if position==snake_position[0]:
-            pygame.draw.rect(display, (0, 0, 0), pygame.Rect(position[0], position[1], 10, 10))
-            continue
-        pygame.draw.rect(display, (255, 0, 0), pygame.Rect(position[0], position[1], 10, 10))
+            if display:
+                pygame.draw.rect(display, (0, 0, 0), pygame.Rect(position[0], position[1], 10, 10))
+                continue
+        if display:
+           pygame.draw.rect(display, (255, 0, 0), pygame.Rect(position[0], position[1], 10, 10))
     
 
 def display_apple(apple_position, display):
-    pygame.draw.rect(display, (0, 255, 0), pygame.Rect(apple_position[0], apple_position[1], 10, 10))
+    if display:
+        pygame.draw.rect(display, (0, 255, 0), pygame.Rect(apple_position[0], apple_position[1], 10, 10))
 
 def starting_positions():
+    field = np.zeros(2500, dtype=int)
     snake_start = [200, 200]
     snake_position = []
     x = snake_start[0]
     y = snake_start[1]
-    score = 10
+    score = 4   
     length = score
     for i in range(math.ceil(score/10)):
         if length-10>0:
@@ -35,22 +40,26 @@ def starting_positions():
             if y/10%2==0:
                 snake_position[i2+10*i].append(x+i2*10)
                 snake_position[i2+10*i].append(y)
+                fieldCell = int((x+i2*10)/10+50*(y/10))
             else:
                 snake_position[i2+10*i].append(90+x-i2*10)
                 snake_position[i2+10*i].append(y)
-        length = length-10
+                fieldCell = int((90+x-i2*10)/10+50*(y/10))
+            field[fieldCell] = 1
+        length = length-10  
         y=y+10
-    print(snake_position)
     apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
     for aplle_position in  snake_position:
         apple_position = [random.randrange(1, 50) * 10, random.randrange(1, 50) * 10]
-    return snake_start, snake_position, apple_position, score
+            
+    return snake_start, snake_position, apple_position, score, field
 
 def apple_distance_from_snake(apple_position, snake_position):
     return np.linalg.norm(np.array(apple_position) - np.array(snake_position[0]))
     
-def generate_snake(snake_start, snake_position, apple_position, button_direction, score):
+def generate_snake(snake_start, snake_position, apple_position, button_direction, score, stepsBeforeGrowth, field):
     # right=1, left=0, top=2, bottom=3
+    
     if button_direction == 1:
         snake_start[0] += 10
     elif button_direction == 0:
@@ -59,16 +68,29 @@ def generate_snake(snake_start, snake_position, apple_position, button_direction
         snake_start[1] += 10
     else:
         snake_start[1] -= 10
-    
-    if snake_start == apple_position:
-        apple_position, score = collision_with_apple(snake_position ,apple_position, score)
+    fieldCell = int(snake_start[0]/10+50*(snake_start[1]/10))
+    field[fieldCell] = 1
+    if stepsBeforeGrowth==0:
         snake_position.insert(0, list(snake_start))
-
+        score += 1
+        stepsBeforeGrowth = 5
+        
     else:
         snake_position.insert(0, list(snake_start))
+        fieldCell = int(snake_position[-1][0]/10+50*(snake_position[-1][1]/10))
+        field[fieldCell] = 0
         snake_position.pop()
+    # stepsBeforeGrowth -= 1
         
-    return snake_position, apple_position, score
+    # if snake_start == apple_position:
+    #     apple_position, score = collision_with_apple(snake_position ,apple_position, score)
+    #     snake_position.insert(0, list(snake_start))
+
+    # else:
+    #     snake_position.insert(0, list(snake_start))
+    #     snake_position.pop()
+    
+    return snake_position, apple_position, score, stepsBeforeGrowth, field
 
 
 def collision_with_apple(snake_position, apple_position, score):
@@ -176,7 +198,11 @@ def angle_with_apple(snake_position, apple_position):
     return angle, snake_direction_vector, apple_direction_vector_normalized, snake_direction_vector_normalized
 
 
-def play_game(snake_start, snake_position, apple_position, button_direction, score, display, clock):
+def play_game(snake_start, snake_position, apple_position, button_direction, score, display, clock, stepsBeforeGrowth, field):
+    if clock==False and display==False:
+        snake_position, apple_position, score, stepsBeforeGrowth, field = generate_snake(snake_start, snake_position, apple_position,
+                                                           button_direction, score, stepsBeforeGrowth, field)
+        return False, snake_position, apple_position, score, stepsBeforeGrowth, field
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return True, snake_position, apple_position, score
@@ -185,24 +211,25 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
     display_apple(apple_position, display)
     display_snake(snake_position, display)
 
-    snake_position, apple_position, score = generate_snake(snake_start, snake_position, apple_position,
-                                                           button_direction, score)
+    snake_position, apple_position, score, stepsBeforeGrowth, field = generate_snake(snake_start, snake_position, apple_position,
+                                                           button_direction, score, stepsBeforeGrowth, field)
     pygame.display.set_caption("SCORE: " + str(score))
     pygame.display.update()
     clock.tick(10)
-    return False, snake_position, apple_position, score
+    return False, snake_position, apple_position, score, stepsBeforeGrowth, field
     
 #Test
 def generate_training_data(display=False, clock=False):
     training_data_x = []
     training_data_y = []
-    training_games = 1000
-    steps_per_game = 500
+    training_games = 1
+    steps_per_game = 10
 
     for _ in tqdm(range(training_games)):
-        snake_start, snake_position, apple_position, score = starting_positions()
-        prev_apple_distance = apple_distance_from_snake(apple_position, snake_position)
+        snake_start, snake_position, apple_position, score, field = starting_positions()
 
+        prev_apple_distance = apple_distance_from_snake(apple_position, snake_position)
+        stepsBeforeGrowth = 5
         for _ in range(steps_per_game):
             angle, snake_direction_vector, apple_direction_vector_normalized, snake_direction_vector_normalized = angle_with_apple(
                 snake_position, apple_position)
@@ -213,28 +240,27 @@ def generate_training_data(display=False, clock=False):
             direction, button_direction, training_data_y = generate_training_data_y(snake_position, angle_with_apple,
                                                                                     button_direction, direction,
                                                                                     training_data_y, is_front_blocked,
-                                                                                    is_left_blocked, is_right_blocked)
+                                                                                    is_left_blocked, is_right_blocked, score)
             
             if snake_position[0] in  snake_position[1:] or collision_with_boundaries(snake_start):
-                print('collision with self')
+                print(snake_position)
+                print('collision with self or boundaries')
                 break
             
-            training_data_x.append(
-                [is_left_blocked, is_front_blocked, is_right_blocked, apple_direction_vector_normalized[0], \
-                 snake_direction_vector_normalized[0], apple_direction_vector_normalized[1], \
-                 snake_direction_vector_normalized[1]])
-            if display and clock:
-                quit_game, snake_position, apple_position, score = play_game(snake_start, snake_position, apple_position,
-                                                                  button_direction, score, display, clock)
-                if quit_game:
-                    return
-            if _ == 500:
+            training_data_x.append(field)
+            quit_game, snake_position, apple_position, score, stepsBeforeGrowth, field = play_game(snake_start, snake_position, apple_position,
+                                                              button_direction, score, display, clock, stepsBeforeGrowth, field)
+            for i in field:
+                print(i, end='')
+            if quit_game:
+                return
+            if _ == steps_per_game-1:
                 print('run out of steps')
     print(len(training_data_y))
     return training_data_x, training_data_y
 
 def generate_training_data_y(snake_position, angle_with_apple, button_direction, direction, training_data_y,
-                             is_front_blocked, is_left_blocked, is_right_blocked):
+                             is_front_blocked, is_left_blocked, is_right_blocked, score):
     if direction == -1:
         if is_left_blocked == 1:
             if is_front_blocked == 1 and is_right_blocked == 0:
@@ -286,7 +312,7 @@ def generate_training_data_y(snake_position, angle_with_apple, button_direction,
 
     return direction, button_direction, training_data_y
 
-def run_game(graphicall_nterface=True):
+def run_game(graphicall_nterface):
     if graphicall_nterface:
         display_width = 500
         display_height = 500
@@ -299,4 +325,4 @@ def run_game(graphicall_nterface=True):
         generate_training_data()
         
 
-run_game()
+run_game(False)
