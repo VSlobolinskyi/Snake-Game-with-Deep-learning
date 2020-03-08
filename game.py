@@ -32,17 +32,23 @@ def starting_positions():
     return snake_start, snake_position, apple_position, score
 
 def apple_distance_from_snake(apple_position, snake_position):
-    return np.linalg.norm(np.array(apple_position) - np.array(snake_position[0]))
+    return np.linalg.norm(np.array(apple_position) - np.array(snake_position))
+
+def move_snake_start(button_direction, x, y):
+    if button_direction == 1:
+        x += 10
+    elif button_direction == 0:
+        x -= 10
+    elif button_direction == 2:
+        y += 10
+    else:
+        y -= 10
+    return x, y
 
 def generate_snake(snake_start, snake_position, apple_position, button_direction, score):
-    if button_direction == 1:
-        snake_start[0] += 10
-    elif button_direction == 0:
-        snake_start[0] -= 10
-    elif button_direction == 2:
-        snake_start[1] += 10
-    else:
-        snake_start[1] -= 10
+    new_x, new_y = move_snake_start(button_direction, snake_start[0], snake_start[1])
+    snake_start[0] = new_x
+    snake_start[1] = new_y
 
     if snake_start == apple_position:
         apple_position, score = collision_with_apple(apple_position, score)
@@ -128,26 +134,6 @@ def generate_button_direction(new_direction):
 
     return button_direction
 
-def angle_with_apple(snake_position, apple_position):
-    apple_direction_vector = np.array(apple_position) - np.array(snake_position[0])
-    snake_direction_vector = np.array(snake_position[0]) - np.array(snake_position[1])
-
-    norm_of_apple_direction_vector = np.linalg.norm(apple_direction_vector)
-    norm_of_snake_direction_vector = np.linalg.norm(snake_direction_vector)
-    if norm_of_apple_direction_vector == 0:
-        norm_of_apple_direction_vector = 10
-    if norm_of_snake_direction_vector == 0:
-        norm_of_snake_direction_vector = 10
-
-    apple_direction_vector_normalized = apple_direction_vector / norm_of_apple_direction_vector
-    snake_direction_vector_normalized = snake_direction_vector / norm_of_snake_direction_vector
-    angle = math.atan2(
-        apple_direction_vector_normalized[1] * snake_direction_vector_normalized[0] - apple_direction_vector_normalized[
-            0] * snake_direction_vector_normalized[1],
-        apple_direction_vector_normalized[1] * snake_direction_vector_normalized[1] + apple_direction_vector_normalized[
-            0] * snake_direction_vector_normalized[0]) / math.pi
-    return angle, snake_direction_vector, apple_direction_vector_normalized, snake_direction_vector_normalized
-
 def play_game(snake_start, snake_position, apple_position, button_direction, score, display, clock):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -162,6 +148,6 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
                                                                button_direction, score)
         pygame.display.set_caption("SCORE: " + str(score))
         pygame.display.update()
-        clock.tick(1)
+        clock.tick(100)
 
         return False, snake_position, apple_position, score

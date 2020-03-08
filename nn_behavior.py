@@ -1,40 +1,39 @@
 from game import *
 from tqdm import tqdm
+import asyncio
 
 
-def generate_training_data(model, display, clock):
+async def generate_training_data(model1, model2, display, clock):
     training_data_x = []
     training_data_y = []
+    training_data2_x = []
+    training_data2_y = []
     training_games = 1000
     steps_per_game = 2000
 
     for _ in tqdm(range(training_games)):
         snake_start, snake_position, apple_position, score = starting_positions()
-        prev_apple_distance = apple_distance_from_snake(apple_position, snake_position)
 
         for _ in range(steps_per_game):
-            angle, snake_direction_vector, apple_direction_vector_normalized, snake_direction_vector_normalized = \
-                angle_with_apple(snake_position, apple_position)
-
+            prev_apple_position = apple_position
             train_data_len = len(training_data_x)
+            train_data2_len = len(training_data2_x)
             if train_data_len > 0:
-                predicted_wrong_direction = np.argmax(model.predict(np.array([training_data_x[train_data_len-1]]))) - 1
-                direction = get_predicted_direction(predicted_wrong_direction)
-                button_direction = direction_vector(snake_position, direction)
+                predicted_wrong_direction = np.argmax(model1.predict(np.array([training_data_x[train_data_len-1]]))) - 1
+                if train_data2_len > 0:
+                    predicted_direction_to_apple = np.argmax(model2.predict(np.array([training_data2_x[train_data2_len-1]])))
+                else:
+                    predicted_direction_to_apple = None
+                direction, button_direction = get_predicted_direction(None, predicted_direction_to_apple, snake_position)
                 print('predicted_wrong_direction: ', predicted_wrong_direction)
+                print('predicted_direction_to_apple: ', predicted_direction_to_apple)
+                print('result direction: ', direction)
+                print('result absolute direction: ', button_direction)
             else:
                 direction, button_direction = generate_random_direction(snake_position)
 
             current_direction_vector, is_front_blocked, is_left_blocked, is_right_blocked = blocked_directions(
                 snake_position)
-
-            # button_direction, training_data_y = generate_training_data_y(snake_position, direction,
-            #                                                              training_data_y)
-            # training_data_x.append(
-            #     [is_left_blocked, is_front_blocked, is_right_blocked, apple_direction_vector_normalized[0],
-            #      snake_direction_vector_normalized[0], apple_direction_vector_normalized[1],
-            #      snake_direction_vector_normalized[1]])
-
 
             quit_game, snake_position, apple_position, score = play_game(snake_start, snake_position, apple_position,
                                                               button_direction, score, display, clock)
@@ -43,47 +42,59 @@ def generate_training_data(model, display, clock):
                     (is_right_blocked == 1 and direction == 1)
 
             x, y = get_training_data(collision, direction, snake_position, apple_position)
+            x2, y2 = get_training_data2(button_direction, snake_position, apple_position)
+
+            if y2 != None and prev_apple_position == apple_position:
+                training_data2_x.append(x2)
+                training_data2_y.append(y2)
 
             for item in x:
                 training_data_x.append(item)
             for item in y:
                 training_data_y.append(item)
 
-            npx = np.array(training_data_x)
-            npy = np.array(training_data_y)
-            print('x shape: ', np.array(x).shape)
-            print('training_data_x shape: ', npx.shape)
-            print('training_data_y shape: ', npy.shape)
-
             if quit_game:
                 return training_data_x, training_data_y
 
             if _ == steps_per_game - 1:
-                model.fit(npx,npy, batch_size = 256, epochs= 3)
+                # asyncio.run(train_model(model1,npx,npy))
+                # asyncio.create_task(train_model(model2,training_data2_x,training_data2_y))
+                await train_model(model2,training_data2_x,training_data2_y)
                 print('\nExit game after 2000 steps!')
 
             if collision:
-                model.fit(npx,npy, batch_size = 256, epochs= 3)
+                # asyncio.run(train_model(model1,npx,npy))
+                # asyncio.create_task(train_model(model2,training_data2_x,training_data2_y))
+                await train_model(model2,training_data2_x,training_data2_y)
                 print('\nExit game with collision! Direction: ', direction)
                 break
 
     return training_data_x, training_data_y
 
-def generate_training_data_y(snake_position, direction, training_data_y):
-
-    button_direction = direction_vector(snake_position, direction)
-
-    if direction == -1:
-        training_data_y.append([1, 0, 0])
-    if direction == 0:
-        training_data_y.append([0, 1, 0])
-    if direction == 1:
-        training_data_y.append([0, 0, 1])
-
-    return button_direction, training_data_y
+async def train_model(model,training_data_x,training_data_y):
+    npx = np.array(training_data_x)
+    npy = np.array(training_data_y)
+    model.fit(npx,npy, batch_size = 256, epochs= 3)
+    print('\nModel trainded')
 
 def get_index(position):
     return int(position/cell_size)
+
+def get_training_data2(button_direction, snake_position, apple_position):
+    curr_dist = apple_distance_from_snake(apple_position, snake_position[0])
+    prev_dist = apple_distance_from_snake(apple_position, snake_position[1])
+    if curr_dist >= prev_dist:
+        return None, None
+
+    sx = snake_position[0][0] / display_width
+    sy = snake_position[0][1] / display_height
+    ax = apple_position[0] / display_width
+    ay = apple_position[1] / display_height
+
+    x_to_add = [sx, sy, ax, ay]
+    y_to_add = button_direction
+
+    return x_to_add, y_to_add
 
 def get_training_data(collision, direction, snake_position, apple_position):
     snake_head_mark = 0.2
@@ -118,8 +129,28 @@ def get_training_data(collision, direction, snake_position, apple_position):
     
     return x_to_add, y_to_add
 
-def get_predicted_direction(wrong_direction):
-    direction = random.randint(-1, 1)
-    while direction == wrong_direction:
+def get_predicted_direction(wrong_direction, direction_to_apple, snake_position):
+    if direction_to_apple == None:
         direction = random.randint(-1, 1)
-    return direction
+    else:
+        button_direction = direction_to_apple
+        for i in range(3):
+            tmp_direction = i-1
+            tmp_button_direction = direction_vector(snake_position, tmp_direction)
+            if button_direction == tmp_button_direction:
+                break
+        if button_direction == tmp_button_direction:
+            direction = tmp_direction
+        else:
+            direction = random.randint(-1, 1)
+    
+    button_direction = direction_vector(snake_position, direction)
+
+    if wrong_direction != None:
+        wrong_button_direction = direction_vector(snake_position, wrong_direction)
+
+        while button_direction == wrong_button_direction:
+            direction = random.randint(-1, 1)
+            button_direction = direction_vector(snake_position, direction)
+
+    return direction, button_direction
