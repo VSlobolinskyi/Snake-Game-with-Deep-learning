@@ -22,6 +22,8 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
     task2 = None
     model_train2_step = 50
     model_train1_step = 100
+    model_train2_input_limit = 5000
+    model_train1_input_limit = 1000
     game_speed = 20
 
     for _ in tqdm(range(training_games)):
@@ -41,7 +43,7 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
                 if task2 != None:
                     await task2
                 task2 = asyncio.create_task(train_model(model2, training_data2_x, training_data2_y, 'model2.h5'))
-                if len(training_data2_y) > 5000:
+                if len(training_data2_y) >= model_train2_input_limit:
                     for j in range(model_train2_step):
                         training_data2_x.pop(0)
                         training_data2_y.pop(0)
@@ -50,7 +52,7 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
                 if task1 != None:
                     await task1
                 task1 = asyncio.create_task(train_model(model1, training_data_x, training_data_y, 'model1.h5'))
-                if len(training_data_y) > 500:
+                if len(training_data_y) >= model_train1_input_limit:
                     for j in range(model_train1_step):
                         training_data_x.pop(0)
                         training_data_y.pop(0)
@@ -169,7 +171,7 @@ def get_training_data(snake_position, is_front_blocked, is_left_blocked, is_righ
     # map[x,y,0] = snake_head_mark
     map[x,y,0] = snake_head_mark
 
-    input_data = map.reshape()
+    input_data = map.reshape(-1)
     x_to_add = []
     y_to_add = []
     
