@@ -104,7 +104,7 @@ async def predict_and_play(training_data_x, training_data2_x, model1, model2, sn
             (is_left_blocked == 1 and direction == -1) or \
             (is_right_blocked == 1 and direction == 1)
 
-    x, y, input_training_data = get_training_data(prev_snake_position, prev_apple_position, \
+    x, y, input_training_data = get_training_data(prev_snake_position, \
         is_front_blocked, is_left_blocked, is_right_blocked)
     # x = []
     # y = []
@@ -154,8 +154,7 @@ def get_training_data2(button_direction, snake_position, apple_position):
 
     return x_to_add, y_to_add
 
-def get_training_data(snake_position, apple_position, \
-                        is_front_blocked, is_left_blocked, is_right_blocked):
+def get_training_data(snake_position, is_front_blocked, is_left_blocked, is_right_blocked):
     snake_head_mark = 0.2
     snake_body_mark = 0.5
     apple_mark = 0.7
@@ -163,15 +162,14 @@ def get_training_data(snake_position, apple_position, \
     for i in snake_position[1:]:
         x = get_index(i[0])
         y = get_index(i[1])
-        map[x,y,0] = snake_body_mark
+        # map[x,y,0] = snake_body_mark
+        map[x,y] = snake_body_mark
     x = get_index(snake_position[0][0])
     y = get_index(snake_position[0][1])
+    # map[x,y,0] = snake_head_mark
     map[x,y,0] = snake_head_mark
-    x = get_index(apple_position[0])
-    y = get_index(apple_position[1])
-    map[x,y,0] = apple_mark
 
-    input_data = map
+    input_data = map.reshape()
     x_to_add = []
     y_to_add = []
     

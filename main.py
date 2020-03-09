@@ -38,13 +38,16 @@ RIGHT ->button_direction = 1
 
 # Snake prevent collisions model
 model1 = Sequential()
-model1.add(Conv2D(250, (3,3), activation='relu', kernel_initializer='he_uniform', \
-    input_shape=(int(display_width/cell_size), int(display_height/cell_size), 1)))
-model1.add(MaxPool2D((2, 2)))
-model1.add(Flatten())
-model1.add(Dense(20, activation='relu', kernel_initializer='he_uniform'))
-model1.add(Dropout(0.3))
-model1.add(Dense(3, activation='softmax'))
+# model1.add(Conv2D(250, (3,3), activation='relu', kernel_initializer='he_uniform', \
+#     input_shape=(int(display_width/cell_size), int(display_height/cell_size), 1)))
+# model1.add(MaxPool2D((2, 2)))
+# model1.add(Flatten())
+# model1.add(Dense(20, activation='relu', kernel_initializer='he_uniform'))
+# model1.add(Dropout(0.3))
+# model1.add(Dense(3, activation='softmax'))
+model2.add(Dense(2500, input_dim=int(display_width/cell_size)*int(display_height/cell_size), activation='relu'))
+model2.add(Dense(500, activation='relu'))
+model2.add(Dense(4,  activation='softmax'))
 model1.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Snake move to apple model
