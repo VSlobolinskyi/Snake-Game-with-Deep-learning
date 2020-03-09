@@ -6,7 +6,9 @@ from tqdm import tqdm
 import numpy as np
 import math
 from random import randrange 
-import tensorflow as tf
+from keras.models import Sequential 
+from keras.layers import Dense
+
 
 def display_snake(snake_position, display):
     for position in snake_position:
@@ -28,7 +30,7 @@ def starting_positions():
     snake_position = []
     x = snake_start[0]
     y = snake_start[1]
-    score = 4   
+    score = randrange(20, 21)
     length = score
     for i in range(math.ceil(score/10)):
         if length-10>0:
@@ -215,15 +217,15 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
                                                            button_direction, score, stepsBeforeGrowth, field)
     pygame.display.set_caption("SCORE: " + str(score))
     pygame.display.update()
-    clock.tick(10)
+    clock.tick(200)
     return False, snake_position, apple_position, score, stepsBeforeGrowth, field
     
 #Test
-def generate_training_data(display=False, clock=False):
+def generate_training_data(model, display, clock):
     training_data_x = []
     training_data_y = []
-    training_games = 1
-    steps_per_game = 10
+    training_games = 500
+    steps_per_game = 500
 
     for _ in tqdm(range(training_games)):
         snake_start, snake_position, apple_position, score, field = starting_positions()
@@ -236,93 +238,120 @@ def generate_training_data(display=False, clock=False):
             direction, button_direction = generate_random_direction(snake_position, angle)
             current_direction_vector, is_front_blocked, is_left_blocked, is_right_blocked = blocked_directions(
                 snake_position)
-            
+            # if training_data_y:
+            #     print('diff: ', len(training_data_y))
             direction, button_direction, training_data_y = generate_training_data_y(snake_position, angle_with_apple,
                                                                                     button_direction, direction,
                                                                                     training_data_y, is_front_blocked,
                                                                                     is_left_blocked, is_right_blocked, score)
+
+            training_data_x.append(field)
+            npx = np.array(training_data_x)
+            npy = np.array(training_data_y)
             
             if snake_position[0] in  snake_position[1:] or collision_with_boundaries(snake_start):
+                model.fit(npx, npy, batch_size=256, epochs=3)
                 print(snake_position)
                 print('collision with self or boundaries')
                 break
             
-            training_data_x.append(field)
             quit_game, snake_position, apple_position, score, stepsBeforeGrowth, field = play_game(snake_start, snake_position, apple_position,
                                                               button_direction, score, display, clock, stepsBeforeGrowth, field)
-            for i in field:
-                print(i, end='')
+            # for i in field:
+            #     print(i, end='')
             if quit_game:
                 return
             if _ == steps_per_game-1:
+                model.fit(npx, npy, batch_size=256, epochs=3)
                 print('run out of steps')
+                
+            if len(npx) > 0:
+                direction = np.argmax(model.predict(npx))-1
+                button_direction = direction_vector(snake_position, direction)
+                
     print(len(training_data_y))
     return training_data_x, training_data_y
 
 def generate_training_data_y(snake_position, angle_with_apple, button_direction, direction, training_data_y,
                              is_front_blocked, is_left_blocked, is_right_blocked, score):
+    print('d', direction)
     if direction == -1:
         if is_left_blocked == 1:
             if is_front_blocked == 1 and is_right_blocked == 0:
                 direction = 1
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([0, 0, 1])
+                training_data_y.append([0])#[1, 0, 0]
             elif is_front_blocked == 0 and is_right_blocked == 1:
                 direction = 0
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([0, 1, 0])
+                training_data_y.append([1])#[0, 1, 0]
             elif is_front_blocked == 0 and is_right_blocked == 0:
                 direction = 1
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([0, 0, 1])
+                training_data_y.append([2])#[0, 0, 1]
+            else:
+                training_data_y.append([2])
         else:
-            training_data_y.append([1, 0, 0])
+            training_data_y.append([0])
     elif direction == 0:
         if is_front_blocked == 1:
             if is_left_blocked == 1 and is_right_blocked == 0:
                 direction = 1
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([0, 0, 1])
+                training_data_y.append([2])
             elif is_left_blocked == 0 and is_right_blocked == 1:
                 direction = -1
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([1, 0, 0])
+                training_data_y.append([0])
             elif is_left_blocked == 0 and is_right_blocked == 0:
                 direction = 0
-                training_data_y.append([0, 0, 1])
+                training_data_y.append([2])
                 button_direction = direction_vector(snake_position, direction)
+            else:
+                training_data_y.append([2])
         else:
-            training_data_y.append([0, 1, 0])
+            training_data_y.append([1])
     else:
         if is_right_blocked == 1:
             if is_left_blocked == 1 and is_front_blocked == 0:
                 direction = 0
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([0, 1, 0])
+                training_data_y.append([1])
             elif is_left_blocked == 0 and is_front_blocked == 1:
                 direction = -1
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([1, 0, 0])
+                training_data_y.append([0])
             elif is_left_blocked == 0 and is_front_blocked == 0:
                 direction = 1
                 button_direction = direction_vector(snake_position, direction)
-                training_data_y.append([1, 0, 0])
+                training_data_y.append([0])
+            else:
+                training_data_y.append([2])
         else:
-            training_data_y.append([0, 0, 1])
-
+            training_data_y.append([2])
+            
     return direction, button_direction, training_data_y
 
-def run_game(graphicall_nterface):
-    if graphicall_nterface:
+def run_game(graphicall_interface):
+    model = build_model()
+    if graphicall_interface:
         display_width = 500
         display_height = 500
         pygame.init()
         display=pygame.display.set_mode((display_width,display_height))
         clock=pygame.time.Clock()
-        generate_training_data(display, clock)
+        generate_training_data(model, display, clock)
     else:
-        clock=pygame.time.Clock()
-        generate_training_data()
-        
+       training_data_x, training_data_y = generate_training_data(model, False, False)
+       
+def build_model():
+    model = Sequential()
+    model.add(Dense(250, input_dim=2500, activation='relu'))
+    model.add(Dense(50, activation='relu'))
+    model.add(Dense(3, activation='softmax'))
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    
+    return model
+            
 
-run_game(False)
+run_game(True)
