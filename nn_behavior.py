@@ -14,13 +14,14 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
     training_data_y = []
     training_data2_x = []
     training_data2_y = []
+    input_training_data = []
     training_games = 1000
     steps_per_game = 2000
     steps_count = 0
     task1 = None
     task2 = None
     model_train2_step = 50
-    model_train1_step = 200
+    model_train1_step = 100
     game_speed = 20
 
     for _ in tqdm(range(training_games)):
@@ -28,10 +29,10 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
 
         for _ in range(steps_per_game):
 
-            quit_game, collision, direction, snake_position, apple_position, score = await predict_and_play( \
+            quit_game, collision, direction, snake_position, apple_position, score, input_training_data = await predict_and_play( \
                 training_data_x, training_data2_x, model1, model2, \
                 snake_position, apple_position, snake_start, score, display, clock, show_game, game_speed, \
-                training_data2_y, training_data_y, \
+                training_data2_y, training_data_y, input_training_data, \
                 steps_count)
 
             steps_count += 1
@@ -41,15 +42,18 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
                     await task2
                 task2 = asyncio.create_task(train_model(model2, training_data2_x, training_data2_y, 'model2.h5'))
                 if len(training_data2_y) > 5000:
-                    training_data2_x = []
-                    training_data2_y = []
+                    for j in range(model_train2_step):
+                        training_data2_x.pop(0)
+                        training_data2_y.pop(0)
 
             if steps_count % model_train1_step == 0:
                 if task1 != None:
                     await task1
                 task1 = asyncio.create_task(train_model(model1, training_data_x, training_data_y, 'model1.h5'))
-                training_data_x = []
-                training_data_y = []
+                if len(training_data_y) > 500:
+                    for j in range(model_train1_step):
+                        training_data_x.pop(0)
+                        training_data_y.pop(0)
 
             if quit_game:
                 await train_model(model2, training_data2_x, training_data2_y, 'model2.h5')
@@ -70,11 +74,11 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
 
 async def predict_and_play(training_data_x, training_data2_x, model1, model2, snake_position, apple_position,
                         snake_start, score, display, clock, show_game, game_speed, training_data2_y, training_data_y,
-                        steps_count):
-    train_data_len = len(training_data_x)
+                        input_training_data, steps_count):
+    train_data_len = len(input_training_data)
     train_data2_len = len(training_data2_x)
     if train_data_len > 0:
-        predicted_wrong_direction = np.argmax(model1.predict(np.array([training_data_x[train_data_len-1]]))) - 1
+        predicted_wrong_direction = np.argmax(model1.predict(np.array([input_training_data[0]]))) - 1
     else:
         predicted_wrong_direction = None
     if train_data2_len > 0:
@@ -100,9 +104,10 @@ async def predict_and_play(training_data_x, training_data2_x, model1, model2, sn
             (is_left_blocked == 1 and direction == -1) or \
             (is_right_blocked == 1 and direction == 1)
 
-    # x, y = get_training_data(collision, direction, prev_snake_position, prev_apple_position)
-    x = []
-    y = []
+    x, y, input_training_data = get_training_data(prev_snake_position, prev_apple_position, \
+        is_front_blocked, is_left_blocked, is_right_blocked)
+    # x = []
+    # y = []
     x2, y2 = get_training_data2(button_direction, snake_position, prev_apple_position)
 
     if y2 != None and prev_apple_position == apple_position:
@@ -114,7 +119,7 @@ async def predict_and_play(training_data_x, training_data2_x, model1, model2, sn
     for item in y:
         training_data_y.append(item)
     
-    return quit_game, collision, direction, snake_position, apple_position, score
+    return quit_game, collision, direction, snake_position, apple_position, score, input_training_data
 
 async def train_model(model,training_data_x,training_data_y,save_to_file_name):
     if len(training_data_x) == 0:
@@ -149,38 +154,36 @@ def get_training_data2(button_direction, snake_position, apple_position):
 
     return x_to_add, y_to_add
 
-def get_training_data(collision, direction, snake_position, apple_position):
+def get_training_data(snake_position, apple_position, \
+                        is_front_blocked, is_left_blocked, is_right_blocked):
     snake_head_mark = 0.2
     snake_body_mark = 0.5
     apple_mark = 0.7
-    map = np.full((display_width, display_height), 0.0)
+    map = np.full((int(display_width/cell_size), int(display_height/cell_size), 1), 0.0)
     for i in snake_position[1:]:
         x = get_index(i[0])
         y = get_index(i[1])
-        map[x,y] = snake_body_mark
+        map[x,y,0] = snake_body_mark
     x = get_index(snake_position[0][0])
     y = get_index(snake_position[0][1])
-    map[x,y] = snake_head_mark
+    map[x,y,0] = snake_head_mark
     x = get_index(apple_position[0])
     y = get_index(apple_position[1])
-    map[x,y] = apple_mark
+    map[x,y,0] = apple_mark
 
-    reshaped = map.reshape(display_width*display_height)
+    input_data = map
     x_to_add = []
     y_to_add = []
-    if collision:
-        x_to_add.append(reshaped)
-    else:
-        x_to_add.append(reshaped)
-        x_to_add.append(reshaped)
-
+    
     for i in range(3):
-        if collision and i-1 == direction:
-            y_to_add.append(i)
-        if collision==False and i-1 != direction:
+        direction = i - 1
+        if (is_front_blocked == 1 and direction == 0) or \
+                    (is_left_blocked == 1 and direction == -1) or \
+                    (is_right_blocked == 1 and direction == 1):
+            x_to_add.append(input_data)
             y_to_add.append(i)
     
-    return x_to_add, y_to_add
+    return x_to_add, y_to_add, [input_data]
 
 def get_predicted_direction(wrong_direction, direction_to_apple, snake_position):
 
