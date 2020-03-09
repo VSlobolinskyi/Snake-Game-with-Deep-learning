@@ -106,7 +106,7 @@ async def predict_and_play(training_data_x, training_data2_x, model1, model2, sn
             (is_left_blocked == 1 and direction == -1) or \
             (is_right_blocked == 1 and direction == 1)
 
-    x, y, input_training_data = get_training_data(prev_snake_position, \
+    x, y, input_training_data = get_training_data_ex(prev_snake_position, \
         is_front_blocked, is_left_blocked, is_right_blocked)
     # x = []
     # y = []
@@ -133,7 +133,7 @@ async def train_model(model,training_data_x,training_data_y,save_to_file_name):
     print('\nModel trainded and saved')
 
 def get_index(position):
-    return int(position/cell_size - 1)
+    return int(position/cell_size)
 
 def get_training_data2(button_direction, snake_position, apple_position):
     prev_snake = snake_position[1]
@@ -156,11 +156,69 @@ def get_training_data2(button_direction, snake_position, apple_position):
 
     return x_to_add, y_to_add
 
+def get_training_data_ex(snake_position, is_front_blocked, is_left_blocked, is_right_blocked):
+    size = view_window_size * 2
+    map1 = []
+    map2 = []
+    map3 = []
+    map4 = []
+    current_direction_vector = np.array(snake_position[0]) - np.array(snake_position[1])
+    current_direction_vector = current_direction_vector/cell_size
+    current_direction_vector = [int(item) for item in current_direction_vector]
+    first_axis = 1
+    second_axis = 0
+    if current_direction_vector[0] == 0:
+        first_axis = 0
+        second_axis = 1
+    x_shift = -1
+    if current_direction_vector[second_axis] > 0:
+        x_shift = 1
+    if current_direction_vector[0] == 0:
+        y_shift = current_direction_vector[second_axis]
+    else:
+        y_shift = -current_direction_vector[second_axis]
+    first_shift = y_shift
+    second_shift = x_shift
+    if current_direction_vector[0] == 0:
+        first_shift = x_shift
+        second_shift = y_shift
+    # first_start = snake_position[0][first_axis] + first_shift * view_window_size
+    # first_end = snake_position[0][first_axis] - first_shift * view_window_size
+    # second_start = snake_position[0][second_axis] + second_shift * view_window_size
+    # second_end = snake_position[0][second_axis] + second_shift * view_window_size
+    for j in range(size+1):
+        for i in range(size+1):
+            ii = snake_position[0][first_axis] + cell_size * (view_window_size * first_shift - i * first_shift)
+            jj = snake_position[0][second_axis] + cell_size * (view_window_size * second_shift - j * second_shift)
+            point = [0, 0]
+            point[first_axis] = ii
+            point[second_axis] = jj
+            if point in snake_position or ii < 0 or jj < 0 or ii >= display_width or jj >= display_height :
+                map1.append([item/display_width for item in point])
+                map4.append([0.0, 0.0])
+            else:
+                map2.append([item/display_width for item in point])
+                map3.append([0.0, 0.0])
+    x_to_add = []
+    y_to_add = []
+    input_data = np.concatenate((map1, map3, map2, map4)).reshape(-1)
+    
+    for i in range(3):
+        direction = i - 1
+        if (is_front_blocked == 1 and direction == 0) or \
+                    (is_left_blocked == 1 and direction == -1) or \
+                    (is_right_blocked == 1 and direction == 1):
+            x_to_add.append(input_data)
+            y_to_add.append(i)
+
+    return x_to_add, y_to_add, [input_data]
+
 def get_training_data(snake_position, is_front_blocked, is_left_blocked, is_right_blocked):
     snake_head_mark = 0.2
     snake_body_mark = 0.5
     apple_mark = 0.7
-    map = np.full((int(display_width/cell_size), int(display_height/cell_size), 1), 0.0)
+    map = np.full((int(display_width/cell_size), int(display_height/cell_size)), 0.0)
+    # map = np.full((int(display_width/cell_size), int(display_height/cell_size), 1), 0.0)
     for i in snake_position[1:]:
         x = get_index(i[0])
         y = get_index(i[1])
@@ -169,7 +227,7 @@ def get_training_data(snake_position, is_front_blocked, is_left_blocked, is_righ
     x = get_index(snake_position[0][0])
     y = get_index(snake_position[0][1])
     # map[x,y,0] = snake_head_mark
-    map[x,y,0] = snake_head_mark
+    map[x,y] = snake_head_mark
 
     input_data = map.reshape(-1)
     x_to_add = []

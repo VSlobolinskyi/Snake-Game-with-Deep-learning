@@ -12,6 +12,7 @@ orange = (255,165,0)
 display_width = 500
 display_height = 500
 cell_size = 10
+view_window_size = 2
 
 def display_snake(snake_position, display):
     for position in snake_position[1:]:
@@ -73,7 +74,7 @@ def collision_with_apple(apple_position, score):
 
 
 def collision_with_boundaries(snake_start):
-    if snake_start[0] >= 500 or snake_start[0] < 0 or snake_start[1] >= 500 or snake_start[1] < 0:
+    if snake_start[0] >= display_width or snake_start[0] < 0 or snake_start[1] >= display_height or snake_start[1] < 0:
         return 1
     else:
         return 0
