@@ -23,7 +23,7 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
     model_train2_step = 50
     model_train1_step = 100
     model_train2_input_limit = 5000
-    model_train1_input_limit = 1000
+    model_train1_input_limit = 2000
     game_speed = 20
 
     for _ in tqdm(range(training_games)):
