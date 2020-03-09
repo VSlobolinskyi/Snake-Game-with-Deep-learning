@@ -3,11 +3,26 @@ from nn_behavior import generate_training_data
 
 from keras.models import Sequential
 from keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPool2D
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Dropout
 import asyncio
 
-pygame.init()
-display=pygame.display.set_mode((display_width,display_height))
-clock=pygame.time.Clock()
+import sys
+
+
+show_game = True
+display = None
+clock = None
+
+if len(sys.argv) > 1:
+    show_game = sys.argv[1] == 'True'
+
+if show_game:
+    pygame.init()
+    display=pygame.display.set_mode((display_width,display_height))
+    clock=pygame.time.Clock()
 
 '''
 LEFT -> button_direction = 0
@@ -27,6 +42,7 @@ model1.add(Dense(250, input_dim=display_width*display_height, activation='relu')
 model1.add(Dense(50, activation='relu'))
 model1.add(Dense(3,  activation='softmax'))
 model1.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model = Sequential()
 
 # Snake move to apple model
 model2 = Sequential()
@@ -36,7 +52,7 @@ model2.add(Dense(4,  activation='softmax'))
 
 model2.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-asyncio.run(generate_training_data(model1, model2, display,clock))
+asyncio.run(generate_training_data(model1, model2, display,clock, show_game))
 
 # model.fit((np.array(training_data_x).reshape(-1,7)),( np.array(training_data_y).reshape(-1,3)), batch_size = 256,epochs= 3)
 #
