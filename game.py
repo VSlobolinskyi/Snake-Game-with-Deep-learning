@@ -93,16 +93,15 @@ def blocked_directions(snake_position):
     left_direction_vector = np.array([current_direction_vector[1], -current_direction_vector[0]])
     right_direction_vector = np.array([-current_direction_vector[1], current_direction_vector[0]])
 
-    is_front_blocked = is_direction_blocked(snake_position, current_direction_vector)
-    is_left_blocked = is_direction_blocked(snake_position, left_direction_vector)
-    is_right_blocked = is_direction_blocked(snake_position, right_direction_vector)
+    is_front_blocked = is_direction_blocked(snake_position[0], snake_position, current_direction_vector)
+    is_left_blocked = is_direction_blocked(snake_position[0], snake_position, left_direction_vector)
+    is_right_blocked = is_direction_blocked(snake_position[0], snake_position, right_direction_vector)
 
     return current_direction_vector, is_front_blocked, is_left_blocked, is_right_blocked
 
 
-def is_direction_blocked(snake_position, current_direction_vector):
-    next_step = snake_position[0] + current_direction_vector
-    snake_start = snake_position[0]
+def is_direction_blocked(start, snake_position, current_direction_vector):
+    next_step = start + current_direction_vector
     if collision_with_boundaries(next_step) == 1 or collision_with_self(next_step.tolist(), snake_position) == 1:
         return 1
     else:
