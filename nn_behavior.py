@@ -24,7 +24,7 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
     model_train1_input_limit = 5000
     model_train2_step = 50
     model_train2_input_limit = 5000
-    game_speed = 10
+    game_speed = 50
 
     for _ in tqdm(range(training_games)):
         snake_start, snake_position, apple_position, score = starting_positions()
@@ -78,7 +78,7 @@ async def predict_and_play(training_data_x, training_data_mta_x, model1, model2,
                         snake_start, score, display, clock, show_game, game_speed, training_data2_y, training_data_y,
                         input_training_data, steps_count):
 
-    skip_wrong_direction = False
+    skip_wrong_direction = True
 
     input_training_data_len = len(input_training_data)
     if skip_wrong_direction:
@@ -89,7 +89,6 @@ async def predict_and_play(training_data_x, training_data_mta_x, model1, model2,
     else:
         predicted_wrong_direction = None
     if train_data2_len > 0:
-        print('training_data_mta_x[-1]: ', training_data_mta_x[-1])
         predicted_direction_to_apple_array = model2.predict(np.array([training_data_mta_x[-1]]))
         predicted_direction_to_apple = np.argmax(predicted_direction_to_apple_array[0])
     else:
@@ -301,6 +300,15 @@ def get_training_data(snake_position, is_front_blocked, is_left_blocked, is_righ
     
     return x_to_add, y_to_add, [input_data]
 
+def get_direction(button_direction, snake_position):
+    for i in range(3):
+        tmp_direction = i-1
+        tmp_button_direction = direction_vector(snake_position, tmp_direction)
+        if button_direction == tmp_button_direction:
+            return tmp_direction
+    return None
+
+
 def get_predicted_direction(wrong_direction, direction_to_apple_array, snake_position):
 
     if len(direction_to_apple_array) == 0 and wrong_direction == None:
@@ -310,17 +318,11 @@ def get_predicted_direction(wrong_direction, direction_to_apple_array, snake_pos
         direction = random.randint(-1, 1)
     else:
         direction_to_apple = np.argmax(direction_to_apple_array[0])
-        button_direction = direction_to_apple
-        for i in range(3):
-            tmp_direction = i-1
-            tmp_button_direction = direction_vector(snake_position, tmp_direction)
-            if button_direction == tmp_button_direction:
-                break
-        if button_direction == tmp_button_direction:
-            direction = tmp_direction
-        else:
+        direction = get_direction(direction_to_apple, snake_position)
+        if direction == None:
             direction_to_apple_array = np.delete(direction_to_apple_array[0], direction_to_apple, 0)
-            direction = np.argmax(direction_to_apple_array[0])
+            button_direction = np.argmax(direction_to_apple_array)
+            direction = get_direction(button_direction, snake_position)
     
     button_direction = direction_vector(snake_position, direction)
 
