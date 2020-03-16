@@ -24,7 +24,7 @@ async def generate_training_data(model1, model2, display, clock, show_game=True)
     model_train1_input_limit = 5000
     model_train2_step = 50
     model_train2_input_limit = 5000
-    game_speed = 50
+    game_speed = 10
 
     for _ in tqdm(range(training_games)):
         snake_start, snake_position, apple_position, score = starting_positions()
@@ -78,28 +78,33 @@ async def predict_and_play(training_data_x, training_data_mta_x, model1, model2,
                         snake_start, score, display, clock, show_game, game_speed, training_data2_y, training_data_y,
                         input_training_data, steps_count):
 
-    skip_wrong_direction = True
+    skip_wrong_direction = False
+    skip_apple_direction = False
 
     input_training_data_len = len(input_training_data)
     if skip_wrong_direction:
         input_training_data_len = 0
-    train_data2_len = len(training_data_mta_x)
+    training_data_mta_len = len(training_data_mta_x)
+    if skip_apple_direction:
+        training_data_mta_len = 0
     if input_training_data_len > 0:
-        predicted_wrong_direction = np.argmax(model1.predict(np.array(input_training_data))) - 1
+        # predicted_wrong_direction = np.argmax(model1.predict(np.array(input_training_data))) - 1
+        predicted_wrong_direction = get_predicted_wrong_direction(model1, input_training_data)
     else:
-        predicted_wrong_direction = None
-    if train_data2_len > 0:
+        predicted_wrong_direction = []
+    if training_data_mta_len > 0:
         predicted_direction_to_apple_array = model2.predict(np.array([training_data_mta_x[-1]]))
         predicted_direction_to_apple = np.argmax(predicted_direction_to_apple_array[0])
     else:
         predicted_direction_to_apple_array = []
         predicted_direction_to_apple = None
     direction, button_direction = get_predicted_direction(predicted_wrong_direction, predicted_direction_to_apple_array, snake_position)
-    print('predicted_wrong_direction: ', predicted_wrong_direction)
+    print('input_training_data:', input_training_data)
+    print('predicted_wrong_direction:', predicted_wrong_direction)
     print('predicted_direction_to_apple: ', predicted_direction_to_apple)
-    print('result direction: ', direction)
-    print('result absolute direction: ', button_direction)
-    print('steps: ', steps_count)
+    print('result direction:', direction)
+    print('result absolute direction:', button_direction)
+    print('steps:', steps_count)
 
     current_direction_vector, is_front_blocked, is_left_blocked, is_right_blocked = blocked_directions(
         snake_position)
@@ -113,13 +118,16 @@ async def predict_and_play(training_data_x, training_data_mta_x, model1, model2,
             (is_left_blocked == 1 and direction == -1) or \
             (is_right_blocked == 1 and direction == 1)
 
-    x, y, input_training_data = get_training_data_ex2(prev_snake_position)
+    x, y, input_training_data = get_training_data_ex3(prev_snake_position, is_front_blocked, is_left_blocked, is_right_blocked)
 
     if skip_wrong_direction:
         x = []
         y = []
 
     x2, y2 = get_training_data_move_to_apple(button_direction, snake_position, prev_apple_position)
+
+    if skip_apple_direction:
+        y2 = None
 
     if y2 != None and prev_apple_position == apple_position:
         training_data_mta_x.append(x2)
@@ -165,6 +173,58 @@ def get_training_data_move_to_apple(button_direction, snake_position, apple_posi
     y_to_add = button_direction
 
     return x_to_add, y_to_add
+    
+def get_training_data_ex3(snake_position, is_front_blocked, is_left_blocked, is_right_blocked):
+    x_to_add = []
+    y_to_add = []
+    input_data = [[],[],[]]
+    directions = []
+
+    forward_direction_vector = np.array(snake_position[0]) - np.array(snake_position[1])
+    left_direction_vector = np.array([forward_direction_vector[1], -forward_direction_vector[0]])
+    right_direction_vector = np.array([-forward_direction_vector[1], forward_direction_vector[0]])
+
+    left_first_conner = snake_position[0] + left_direction_vector - forward_direction_vector - forward_direction_vector
+    left_second_conner = left_first_conner + left_direction_vector - forward_direction_vector
+
+    num = 0
+    directions.append([num, left_first_conner, forward_direction_vector])
+    directions.append([num, left_second_conner, forward_direction_vector])
+
+    left_first_conner = snake_position[0] + forward_direction_vector + left_direction_vector + left_direction_vector
+    left_second_conner = left_first_conner + forward_direction_vector + left_direction_vector
+
+    num += 1
+    directions.append([num, left_first_conner, right_direction_vector])
+    directions.append([num, left_second_conner, right_direction_vector])
+
+    left_first_conner = snake_position[0] + right_direction_vector + forward_direction_vector + forward_direction_vector
+    left_second_conner = left_first_conner + right_direction_vector + forward_direction_vector
+
+    num += 1
+    directions.append([num, left_first_conner, -forward_direction_vector])
+    directions.append([num, left_second_conner, -forward_direction_vector])
+
+    for item in directions:
+        current = item[1]
+        right_direction = item[2]
+        blocked_count = 0
+        for i in range(3):
+            if is_direction_blocked(current, snake_position, right_direction):
+                blocked_count += 1
+            current += right_direction
+        input_data[item[0]].append(blocked_count)
+        
+    directions = [is_left_blocked, is_front_blocked, is_right_blocked]
+    if True in directions:
+        for i in range(3):
+            x_to_add.append(input_data[i])
+            if directions[i] or input_data[i][0] > 1 or input_data[i][1] > 1 :
+                y_to_add.append(1)
+            else:
+                y_to_add.append(0)
+
+    return x_to_add, y_to_add, input_data
     
 def get_training_data_ex2(snake_position):
 
@@ -311,26 +371,36 @@ def get_direction(button_direction, snake_position):
 
 def get_predicted_direction(wrong_direction, direction_to_apple_array, snake_position):
 
-    if len(direction_to_apple_array) == 0 and wrong_direction == None:
+    if len(direction_to_apple_array) == 0 and len(wrong_direction) == 0:
         return generate_random_direction(snake_position)
 
-    if len(direction_to_apple_array) == None:
+    if len(direction_to_apple_array) == 0:
         direction = random.randint(-1, 1)
     else:
-        direction_to_apple = np.argmax(direction_to_apple_array[0])
-        direction = get_direction(direction_to_apple, snake_position)
-        if direction == None:
-            direction_to_apple_array = np.delete(direction_to_apple_array[0], direction_to_apple, 0)
+        button_direction = np.argmax(direction_to_apple_array[0])
+        direction = get_direction(button_direction, snake_position)
+        while direction == None and len(direction_to_apple_array) > 1:
+            direction_to_apple_array = np.delete(direction_to_apple_array[0], button_direction, 0)
             button_direction = np.argmax(direction_to_apple_array)
             direction = get_direction(button_direction, snake_position)
     
+    if direction == None:
+        direction = random.randint(-1, 1)
     button_direction = direction_vector(snake_position, direction)
 
-    if wrong_direction != None:
-        wrong_button_direction = direction_vector(snake_position, wrong_direction)
-
-        while button_direction == wrong_button_direction:
+    if len(wrong_direction) != 0:
+        z = 0
+        while wrong_direction[direction+1] and z<10:
             direction = random.randint(-1, 1)
             button_direction = direction_vector(snake_position, direction)
+            z += 1
 
     return direction, button_direction
+
+def get_predicted_wrong_direction(model, input):
+    result = model.predict(np.array(input))
+    print('result:', result)
+    result = result > 0.5
+    result = np.reshape(result, -1)
+
+    return result
