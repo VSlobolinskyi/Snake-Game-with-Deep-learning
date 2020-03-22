@@ -1,5 +1,4 @@
-# packages in environment at D:\ProgramData\miniconda3\envs\snakeAI:
-#
+# snakeAI2
 # Name                    Version                   Build  Channel
 _tflow_select             2.3.0                       mkl  
 absl-py                   0.8.1                    py37_0  
