@@ -41,7 +41,7 @@ def gen():
         yield m
 
 
-def build_graph(observations):
+def build_graph(observations, args):
     """Calculates logits from the input observations tensor.
     This function will be called twice: rollout and train.
     The weights will be shared.
@@ -62,7 +62,7 @@ def main(args):
         with tf.name_scope('rollout'):
             observations = tf.placeholder(shape=(None, OBSERVATION_DIM), dtype=tf.float32)
             
-            logits = build_graph(observations)
+            logits = build_graph(observations, args)
 
             logits_for_sampling = tf.reshape(logits, shape=(1, len(ACTIONS)))
 
@@ -89,7 +89,7 @@ def main(args):
 
             # This reuses the same weights in the rollout phase.
             train_observations.set_shape((args.batch_size, OBSERVATION_DIM))
-            train_logits = build_graph(train_observations)
+            train_logits = build_graph(train_observations, args)
 
             cross_entropies = tf.nn.sparse_softmax_cross_entropy_with_logits(
                 logits=train_logits,
