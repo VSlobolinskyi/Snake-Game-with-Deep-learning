@@ -20,7 +20,7 @@ import numpy as np
 import gym
 from builtins import input
 
-from helpers import discount_rewards, prepro
+from trainer.helpers import discount_rewards, prepro
 from agents.tools.wrappers import AutoReset, FrameHistory
 from collections import deque
 
@@ -233,8 +233,7 @@ def main(args):
                 save_path = saver.save(sess, save_path, global_step=_global_step)
                 print('Model checkpoint saved: {}'.format(save_path))
 
-
-if __name__ == '__main__':
+def init():
     parser = argparse.ArgumentParser('pong trainer')
     parser.add_argument(
         '--n-epoch',
@@ -292,4 +291,8 @@ if __name__ == '__main__':
     # save all checkpoints
     args.max_to_keep = args.n_epoch // args.save_checkpoint_steps
 
-    main(args)
+    return args
+
+
+if __name__ == '__main__':
+    main(init())
