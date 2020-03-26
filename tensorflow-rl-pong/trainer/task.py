@@ -141,6 +141,9 @@ def main(args):
     env = AutoReset(env)
 
     with tf.Session(graph=g) as sess:
+        
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
         if args.restore:
             restore_path = tf.train.latest_checkpoint(args.output_dir)
             print('Restoring from {}'.format(restore_path))
@@ -203,10 +206,10 @@ def main(args):
 
                     episode_memory = []
 
-                    if args.render:
-                        _ = input('episode done, press Enter to replay')
-                        epoch_memory = []
-                        continue
+                    # if args.render:
+                    #     _ = input('episode done, press Enter to replay')
+                    #     epoch_memory = []
+                    #     continue
 
                 if len(epoch_memory) >= ROLLOUT_SIZE:
                     break
