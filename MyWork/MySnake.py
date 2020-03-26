@@ -30,7 +30,7 @@ def starting_positions():
     snake_position = []
     x = snake_start[0]
     y = snake_start[1]
-    score = randrange(6, 10)
+    score = randrange(3, 4)
     length = score
     for i in range(math.ceil(score/10)):
         if length-10>0:
@@ -58,8 +58,8 @@ def starting_positions():
             
     return snake_start, snake_position, apple_position, score, field
 
-def apple_distance_from_snake(apple_position, snake_position):
-    return np.linalg.norm(np.array(apple_position) - np.array(snake_position[0]))
+def apple_distance_from_snake(apple_position, snake_head):
+    return np.linalg.norm(np.array(apple_position) - np.array(snake_head))
     
 def generate_snake(snake_start, snake_position, apple_position, button_direction, score, stepsBeforeGrowth, field):
     # right=1, left=0, top=2, bottom=3
@@ -74,25 +74,27 @@ def generate_snake(snake_start, snake_position, apple_position, button_direction
         snake_start[1] -= 10
     fieldCell = int(snake_start[0]/10-1+50*(snake_start[1]/10-1))
     field[fieldCell] = 1
-    if stepsBeforeGrowth==0:
-        snake_position.insert(0, list(snake_start))
-        score += 1
-        stepsBeforeGrowth = 5
+    # if stepsBeforeGrowth==0:
+    #     snake_position.insert(0, list(snake_start))
+    #     score += 1
+    #     stepsBeforeGrowth = 5
         
+    # else:
+    #     snake_position.insert(0, list(snake_start))
+    #     fieldCell = int(snake_position[-1][0]/10+50*(snake_position[-1][1]/10))
+    #     field[fieldCell] = 0
+    #     snake_position.pop()
+    # stepsBeforeGrowth -= 1
+        
+    if snake_start == apple_position:
+        apple_position, score = collision_with_apple(snake_position ,apple_position, score)
+        snake_position.insert(0, list(snake_start))
+
     else:
         snake_position.insert(0, list(snake_start))
         fieldCell = int(snake_position[-1][0]/10+50*(snake_position[-1][1]/10))
         field[fieldCell] = 0
         snake_position.pop()
-    # stepsBeforeGrowth -= 1
-        
-    # if snake_start == apple_position:
-    #     apple_position, score = collision_with_apple(snake_position ,apple_position, score)
-    #     snake_position.insert(0, list(snake_start))
-
-    # else:
-    #     snake_position.insert(0, list(snake_start))
-    #     snake_position.pop()
     
     return snake_position, apple_position, score, stepsBeforeGrowth, field
 
@@ -149,7 +151,7 @@ def generate_random_direction(snake_position, angle_with_apple):
         direction = -1
     else:
         direction = 0
-    direction = randrange(-1, 2)
+    # direction = randrange(-1, 2)
     return direction_vector(snake_position, direction)
 
 
@@ -182,6 +184,7 @@ def generate_button_direction(new_direction):
 
 
 def angle_with_apple(snake_position, apple_position):
+    print(np.array(snake_position[0]))
     apple_direction_vector = np.array(apple_position) - np.array(snake_position[0])
     snake_direction_vector = np.array(snake_position[0]) - np.array(snake_position[1])
 
@@ -223,16 +226,17 @@ def play_game(snake_start, snake_position, apple_position, button_direction, sco
     return False, snake_position, apple_position, score, stepsBeforeGrowth, field
     
 #Test
-def generate_training_data(model, display, clock):
+def generate_training_data(model, display, clock, model2):
     training_data_x = []
     training_data_y = []
     training_games = 500
     steps_per_game = 500
+    train_x2 = []
+    train_y2 = []
 
     for _games in tqdm(range(training_games)):
         snake_start, snake_position, apple_position, score, field = starting_positions()
 
-        prev_apple_distance = apple_distance_from_snake(apple_position, snake_position)
         stepsBeforeGrowth = 5
         for _steps in range(steps_per_game):
             angle, snake_direction_vector, apple_direction_vector_normalized, snake_direction_vector_normalized = angle_with_apple(
@@ -270,22 +274,42 @@ def generate_training_data(model, display, clock):
             #     training_data_x.append(snake_head_view)
             # if available_dir[2]==1:
             #     training_data_x.append(snake_head_view)
+            
+            
+            
             if available_dir:
                 training_data_x.append(snake_head_view)
             npx = np.array(training_data_x)
             print(npx[-1])
             npy = np.array(training_data_y)
             
+            
+            train_x2.append([snake_start[0]])
+            train_x2[-1].append(snake_start[1])
+            train_x2[-1].append(apple_position[0])
+            train_x2[-1].append(apple_position[1])
+            
+            absolute_direction = absolute_apple_direction(apple_position, snake_position)
+            relative_direction = absolute_to_relative_direction(absolute_direction, snake_position)
+            train_y2.append(absolute_direction)
+            
+            npx2 = np.array(train_x2)
+            npy2 = np.array(train_y2)
+            print(train_y2, apple_direction_vector_normalized)
+            model2.fit(npx2, npy2, batch_size=256, epochs=3)
+            print(snake_position[0], " zero", snake_position[1], " one")
             if snake_position[0] in  snake_position[1:] or collision_with_boundaries(snake_start):
                 model.fit(npx, npy, batch_size=256, epochs=3)
-                print(snake_position)
                 print('collision with self or boundaries')
                 break
             
             if len(npx) > 0:
-                direction = np.argmax(model.predict(np.array([npx[-1]])))-1
+                # direction = np.argmax(model.predict(np.array([npx[-1]])))-1
+                # direction, button_direction = direction_vector(snake_position, direction)
+                # print(direction, button_direction)
+                direction = np.argmax(model2.predict(np.array([npx2[-1]])))-1
                 direction, button_direction = direction_vector(snake_position, direction)
-                print(direction, button_direction)
+                
             quit_game, snake_position, apple_position, score, stepsBeforeGrowth, field = play_game(snake_start, snake_position, apple_position,
                                                               button_direction, score, display, clock, stepsBeforeGrowth, field)
             # for i in field:
@@ -296,10 +320,57 @@ def generate_training_data(model, display, clock):
                 model.fit(npx, npy, batch_size=256, epochs=3)
                 print('run out of steps')
                 
-            
-                
-    print(len(training_data_y))
     return training_data_x, training_data_y
+def absolute_apple_direction(apple_position, snake_position):
+    south = np.array([[0, 10]])
+    north = np.array([[0, -10]])
+    west = np.array([[-10, 0]])
+    east = np.array([[10, 0]])
+    absolute_direction = 0
+
+    if (np.array(snake_position[0])-np.array(snake_position[1])) in south:
+        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+south)
+    else:
+        least_distance = 1000
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(north[0]))<least_distance and (np.array(snake_position[0])-np.array(snake_position[1])) in north:
+        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+north)
+        absolute_direction = 1
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(west[0]))<least_distance and (np.array(snake_position[0])-np.array(snake_position[1])) in west:
+        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+west)
+        absolute_direction = 2
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(east[0]))<least_distance and (np.array(snake_position[0])-np.array(snake_position[1])) in east:
+        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+east)
+        absolute_direction = 3
+    return absolute_direction
+def absolute_to_relative_direction(absolute_direction, snake_position):
+    south = np.array([[0, 10]])
+    north = np.array([[0, -10]])
+    west = np.array([[-10, 0]])
+    east = np.array([[10, 0]])
+    ad_array = [south[0], north[0], west[0], east[0]]
+    back = np.array(snake_position[0])-np.array(snake_position[1])
+    if back in south:
+        forward = north
+        right = east
+        left = west
+    elif back in north:
+        forward = south
+        right = west
+        left = east
+    elif back in west:
+        forward = east
+        right = north
+        left = south
+    else:
+        forward = west
+        right = south
+        left = north
+    if np.array(ad_array[absolute_direction]) in forward:
+        return 1
+    elif np.array(ad_array[absolute_direction]) in right:
+        return 2
+    elif np.array(ad_array[absolute_direction]) in left:
+        return 0
 
 def generate_training_data_y(snake_head_view, training_data_y, direction, button_direction, snake_position):
     direction = 0
@@ -400,28 +471,21 @@ def generate_training_data_y(snake_head_view, training_data_y, direction, button
 
 def run_game(graphicall_interface):
     model = build_model()
+    model2 = build_apple_model()
     if graphicall_interface:
         display_width = 500
         display_height = 500
         pygame.init()
         display=pygame.display.set_mode((display_width,display_height))
         clock=pygame.time.Clock()
-        generate_training_data(model, display, clock)
+        generate_training_data(model, display, clock, model2)
     else:
-        training_data_x, training_data_y = generate_training_data(model, False, False)
+        training_data_x, training_data_y = generate_training_data(model, False, False, model2)
        
 def build_model():
     model = Sequential()
     model.add(Dense(250, input_dim=9, activation='relu'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(10, activation='softsign'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(10, activation='softsign'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(10, activation='relu'))
-    model.add(Dense(10, activation='relu'))
+    model.add(Dense(50, activation='relu'))
     model.add(Dense(3, activation='softmax'))
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     
@@ -429,10 +493,10 @@ def build_model():
 
 def build_apple_model():
     apple_model = Sequential()
-    apple_model.add(Dense(250, input_dim=2500, activation='relu'))
+    apple_model.add(Dense(250, input_dim=4, activation='relu'))
     apple_model.add(Dense(50, activation='relu'))
     apple_model.add(Dense(3, activation='softmax'))
-    apple_model.compile(optimazer='adam', loss='sparse_categroical_crossentropy', metrics=['accuracy'])
+    apple_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     
     return apple_model
 
