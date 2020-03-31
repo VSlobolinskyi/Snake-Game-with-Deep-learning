@@ -8,7 +8,8 @@ import math
 from random import randrange 
 from keras.models import Sequential 
 from keras.layers import Dense
-
+from keras.layers import Dropout
+from os import path
 
 def display_snake(snake_position, display):
     for position in snake_position:
@@ -184,7 +185,7 @@ def generate_button_direction(new_direction):
 
 
 def angle_with_apple(snake_position, apple_position):
-    print(np.array(snake_position[0]))
+    # print(np.array(snake_position[0]))
     apple_direction_vector = np.array(apple_position) - np.array(snake_position[0])
     snake_direction_vector = np.array(snake_position[0]) - np.array(snake_position[1])
 
@@ -233,7 +234,6 @@ def generate_training_data(model, display, clock, model2):
     steps_per_game = 500
     train_x2 = []
     train_y2 = []
-
     for _games in tqdm(range(training_games)):
         snake_start, snake_position, apple_position, score, field = starting_positions()
 
@@ -265,9 +265,9 @@ def generate_training_data(model, display, clock, model2):
                             snake_head_view.append(0)
             snake_head_view[4] = 2
             
-            print(snake_head_view)
+            # print(snake_head_view)
             direction, button_direction, training_data_y, available_dir = generate_training_data_y(snake_head_view, training_data_y, direction, button_direction, snake_position)
-            print(available_dir)
+            # print(available_dir)
             # if available_dir[0]==1:
             #     training_data_x.append(snake_head_view)
             # if available_dir[1]==1:
@@ -280,26 +280,23 @@ def generate_training_data(model, display, clock, model2):
             if available_dir:
                 training_data_x.append(snake_head_view)
             npx = np.array(training_data_x)
-            print(npx[-1])
+            # print(npx[-1])
             npy = np.array(training_data_y)
             
             
-            train_x2.append([snake_start[0]])
-            train_x2[-1].append(snake_start[1])
-            train_x2[-1].append(apple_position[0])
-            train_x2[-1].append(apple_position[1])
-            
+            train_x2.append([snake_start[0], snake_start[1], apple_position[0], apple_position[1]])
+
             absolute_direction = absolute_apple_direction(apple_position, snake_position)
-            relative_direction = absolute_to_relative_direction(absolute_direction, snake_position)
             train_y2.append(absolute_direction)
             
             npx2 = np.array(train_x2)
             npy2 = np.array(train_y2)
-            print(train_y2, apple_direction_vector_normalized)
+            # print('x', train_x2)
+            print('y', train_y2[-1])
             model2.fit(npx2, npy2, batch_size=256, epochs=3)
-            print(snake_position[0], " zero", snake_position[1], " one")
             if snake_position[0] in  snake_position[1:] or collision_with_boundaries(snake_start):
                 model.fit(npx, npy, batch_size=256, epochs=3)
+                model2.save_weights('snake_apple.h5')
                 print('collision with self or boundaries')
                 break
             
@@ -307,7 +304,9 @@ def generate_training_data(model, display, clock, model2):
                 # direction = np.argmax(model.predict(np.array([npx[-1]])))-1
                 # direction, button_direction = direction_vector(snake_position, direction)
                 # print(direction, button_direction)
-                direction = np.argmax(model2.predict(np.array([npx2[-1]])))-1
+                prediction = np.argmax(model2.predict(np.array([npx2[-1]])))
+                direction = absolute_to_relative_direction(prediction, snake_position)-1
+                print(direction, "My direction", prediction, "prediction")
                 direction, button_direction = direction_vector(snake_position, direction)
                 
             quit_game, snake_position, apple_position, score, stepsBeforeGrowth, field = play_game(snake_start, snake_position, apple_position,
@@ -315,62 +314,73 @@ def generate_training_data(model, display, clock, model2):
             # for i in field:
             #     print(i, end='')
             if quit_game:
+                model2.save_weights('snake_apple.h5')
                 return
             if _steps == steps_per_game-1:
                 model.fit(npx, npy, batch_size=256, epochs=3)
+                model2.save_weights('snake_apple.h5')
                 print('run out of steps')
                 
     return training_data_x, training_data_y
+
 def absolute_apple_direction(apple_position, snake_position):
     south = np.array([[0, 10]])
     north = np.array([[0, -10]])
     west = np.array([[-10, 0]])
     east = np.array([[10, 0]])
     absolute_direction = 0
-
-    if (np.array(snake_position[0])-np.array(snake_position[1])) in south:
-        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+south)
-    else:
-        least_distance = 1000
-    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(north[0]))<least_distance and (np.array(snake_position[0])-np.array(snake_position[1])) in north:
-        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+north)
+    least_distance = 1000
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(south[0]))<least_distance:
+        least_distance = np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(south[0]))
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(north[0]))<least_distance:
+        least_distance = np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(north[0]))
         absolute_direction = 1
-    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(west[0]))<least_distance and (np.array(snake_position[0])-np.array(snake_position[1])) in west:
-        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+west)
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(west[0]))<least_distance:
+        least_distance = np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(west[0]))
         absolute_direction = 2
-    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(east[0]))<least_distance and (np.array(snake_position[0])-np.array(snake_position[1])) in east:
-        least_distance = apple_distance_from_snake(apple_position, snake_position[0]+east)
+    if np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(east[0]))<least_distance:
+        least_distance = np.linalg.norm(np.array(apple_position) - np.array(snake_position[0])+np.array(east[0]))
         absolute_direction = 3
     return absolute_direction
+
 def absolute_to_relative_direction(absolute_direction, snake_position):
-    south = np.array([[0, 10]])
-    north = np.array([[0, -10]])
-    west = np.array([[-10, 0]])
-    east = np.array([[10, 0]])
-    ad_array = [south[0], north[0], west[0], east[0]]
-    back = np.array(snake_position[0])-np.array(snake_position[1])
-    if back in south:
-        forward = north
-        right = east
-        left = west
-    elif back in north:
-        forward = south
-        right = west
-        left = east
-    elif back in west:
-        forward = east
-        right = north
-        left = south
+    # top = 0, bottom = 1, right = 2, left = 3
+    south = [0, 10]
+    north = [0, -10]
+    west = [-10, 0]
+    east = [10, 0]
+    back = np.array(np.array(snake_position[0])-np.array(snake_position[1]))
+    if back.tolist() == south:
+        forward = 1
+        right = 3
+        left = 2
+    elif back.tolist() == north:
+        forward = 0
+        right = 2
+        left = 3
+    elif back.tolist() == west:
+        forward = 3
+        right = 0
+        left = 1
     else:
-        forward = west
-        right = south
-        left = north
-    if np.array(ad_array[absolute_direction]) in forward:
-        return 1
-    elif np.array(ad_array[absolute_direction]) in right:
-        return 2
-    elif np.array(ad_array[absolute_direction]) in left:
-        return 0
+        forward = 2
+        right = 1
+        left = 0
+        
+    print(back, "back")
+    print(forward, "forward")
+    result = randrange(0,3)
+    print(result, "rand")
+    if absolute_direction == forward:
+        result =  1
+    elif absolute_direction == right:
+        result =  2
+    elif absolute_direction == left:
+        result =  0
+    
+    print(result, "result")
+    
+    return result
 
 def generate_training_data_y(snake_head_view, training_data_y, direction, button_direction, snake_position):
     direction = 0
@@ -472,6 +482,8 @@ def generate_training_data_y(snake_head_view, training_data_y, direction, button
 def run_game(graphicall_interface):
     model = build_model()
     model2 = build_apple_model()
+    if path.isfile("snake_apple.h5"):
+        model2.load_weights("snake_apple.h5")
     if graphicall_interface:
         display_width = 500
         display_height = 500
@@ -493,9 +505,10 @@ def build_model():
 
 def build_apple_model():
     apple_model = Sequential()
-    apple_model.add(Dense(250, input_dim=4, activation='relu'))
-    apple_model.add(Dense(50, activation='relu'))
-    apple_model.add(Dense(3, activation='softmax'))
+    apple_model.add(Dense(64, input_dim=4, activation='relu'))
+    apple_model.add(Dense(16, activation='relu'))
+    apple_model.add(Dropout(0.3))
+    apple_model.add(Dense(4, activation='softmax'))
     apple_model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
     
     return apple_model
