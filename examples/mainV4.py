@@ -52,6 +52,9 @@ np.random.seed(123)
 env.seed(123)
 nb_actions = env.action_space.n
 
+memory_limit = 1000000
+train_steps = 1750000
+
 # Next, we build our model. We use the same model that was described by Mnih et al. (2015).
 input_shape = (WINDOW_LENGTH,) + INPUT_SHAPE
 model = Sequential()
@@ -79,7 +82,7 @@ print(model.summary())
 
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
 # even the metrics!
-memory = SequentialMemory(limit=100000, window_length=WINDOW_LENGTH)
+memory = SequentialMemory(limit=memory_limit, window_length=WINDOW_LENGTH)
 processor = AtariProcessor()
 
 # Select a policy. We use eps-greedy action selection, which means that a random action is selected
@@ -88,7 +91,7 @@ processor = AtariProcessor()
 # (low eps). We also set a dedicated eps value that is used during testing. Note that we set it to 0.05
 # so that the agent still performs some random actions. This ensures that the agent cannot get stuck.
 policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.05,
-                              nb_steps=100000)
+                              nb_steps=memory_limit)
 
 # The trade-off between exploration and exploitation is difficult and an on-going research topic.
 # If you want, you can experiment with the parameters or use a different policy. Another popular one
@@ -110,16 +113,17 @@ if os.path.isfile(weights_filename):
 if args.mode == 'train':
     # Okay, now it's time to learn something! We capture the interrupt exception so that training
     # can be prematurely aborted. Notice that now you can use the built-in Keras callbacks!
-    checkpoint_weights_filename = 'examples\output\dqn_' + args.env_name + '_weights_{step}.h5f'
+    # checkpoint_weights_filename = 'examples\output\dqn_' + args.env_name + '_weights_{step}.h5f'
+    checkpoint_weights_filename = 'examples\output\dqn_' + args.env_name + '_weights_chp.h5f'
     log_filename = 'examples\output\dqn_{}_log.json'.format(args.env_name)
-    callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=25000)]
-    callbacks += [FileLogger(log_filename, interval=100)]
-    dqn.fit(env, callbacks=callbacks, nb_steps=50000, log_interval=5000)
+    callbacks = [ModelIntervalCheckpoint(checkpoint_weights_filename, interval=50000)]
+    # callbacks += [FileLogger(log_filename, interval=100)]
+    dqn.fit(env, callbacks=callbacks, nb_steps=train_steps, log_interval=5000, verbose=0)
 
     # After training is done, we save the final weights one more time.
     dqn.save_weights(weights_filename, overwrite=True)
 
     # Finally, evaluate our algorithm for 10 episodes.
-    dqn.test(env, nb_episodes=10, visualize=True)
+    dqn.test(env, nb_episodes=10, visualize=False)
 elif args.mode == 'test':
     dqn.test(env, nb_episodes=10, visualize=True)
