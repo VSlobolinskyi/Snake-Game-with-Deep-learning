@@ -113,6 +113,7 @@ class DQNAgent:
     def run(self):
         wins = 0
         if os.path.isfile(weights_filename):
+            print("Loading trained model as cartpole-dqn.h5")
             self.load(weights_filename)
         for e in range(self.EPISODES):
             state = self.env.reset()
@@ -120,7 +121,7 @@ class DQNAgent:
             done = False
             i = 0
             while not done:
-                self.env.render()
+                # self.env.render()
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = np.reshape(next_state, [1, self.state_size])
@@ -135,13 +136,16 @@ class DQNAgent:
                     print("episode: {}/{}, score: {}, e: {:.2}".format(e, self.EPISODES, i, self.epsilon))
                     if i == 500:
                         wins += 1
-                    if wins == 3:
+                    else:
+                        wins = 0
+                    if wins >= 3:
                         print("Saving trained model as cartpole-dqn.h5")
                         self.save(weights_filename)
                         return
                 self.replay()
 
     def test(self):
+        print("Loading trained model as cartpole-dqn.h5")
         self.load(weights_filename)
         for e in range(self.EPISODES):
             state = self.env.reset()
@@ -161,5 +165,5 @@ class DQNAgent:
 if __name__ == "__main__":
     weights_filename = "examples\output\cartpole-dqn.h5"
     agent = DQNAgent()
-    agent.run()
-    # agent.test()
+    # agent.run()
+    agent.test()
