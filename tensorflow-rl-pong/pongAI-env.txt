@@ -57,6 +57,7 @@ six                       1.14.0                   py37_0
 sqlite                    3.31.1               he774522_0
 tensorboard               2.1.1                    pypi_0    pypi
 tensorflow                2.1.0                    pypi_0    pypi
+tensorflow-base           1.14.0          eigen_py37hdbc3f0e_0
 tensorflow-estimator      2.1.0                    pypi_0    pypi
 termcolor                 1.1.0                    py37_1
 urllib3                   1.25.8                   pypi_0    pypi
