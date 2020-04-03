@@ -99,15 +99,6 @@ def compute_loss(logits, actions, rewards):
   # loss = tf.reduce_mean('''TODO''')
   return loss
 
-class LossHistory:
-  def __init__(self, smoothing_factor=0.0):
-    self.alpha = smoothing_factor
-    self.loss = []
-  def append(self, value):
-    self.loss.append( self.alpha*self.loss[-1] + (1-self.alpha)*value if len(self.loss)>0 else value )
-  def get(self):
-    return self.loss
-
 ### Training step (forward and backpropagation) ###
 
 def train_step(model, optimizer, observations, actions, discounted_rewards):
@@ -163,9 +154,6 @@ optimizer = tf.keras.optimizers.Adam(learning_rate)
 # instantiate cartpole agent
 cartpole_model = create_cartpole_model()
 
-# to track our progress
-smoothed_reward = LossHistory(smoothing_factor=0.9)
-
 for i_episode in range(500):
 
   # Restart the environment
@@ -183,7 +171,7 @@ for i_episode in range(500):
       if done:
           # determine total reward and keep a record of this
           total_reward = sum(memory.rewards)
-          smoothed_reward.append(total_reward)
+		  print('reward', total_reward)
           
           # initiate training - remember we don't know anything about how the 
           #   agent is doing until it has crashed!
@@ -281,12 +269,6 @@ for i in range(30):
   observation, _,_,_ = env.step(0)
 observation_pp = preprocess_pong(observation)
 
-f = plt.figure(figsize=(10,3))
-ax = f.add_subplot(121)
-ax2 = f.add_subplot(122)
-ax.imshow(observation); ax.grid(False);
-ax2.imshow(np.squeeze(observation_pp)); ax2.grid(False); plt.title('Preprocessed Observation');
-
 ### Training Pong ###
 
 # Hyperparameters
@@ -298,13 +280,9 @@ pong_model = create_pong_model()
 optimizer = tf.keras.optimizers.Adam(learning_rate)
 
 # plotting
-smoothed_reward = mdl.util.LossHistory(smoothing_factor=0.9)
-plotter = mdl.util.PeriodicPlotter(sec=5, xlabel='Iterations', ylabel='Rewards')
 memory = Memory()
 
 for i_episode in range(MAX_ITERS):
-
-  plotter.plot(smoothed_reward.get())
 
   # Restart the environment
   observation = env.reset()
@@ -332,7 +310,7 @@ for i_episode in range(MAX_ITERS):
       if done:
           # determine total reward and keep a record of this
           total_reward = sum(memory.rewards)
-          smoothed_reward.append( total_reward )
+          print('reward', total_reward)
 
           # begin training
           train_step(pong_model, 
