@@ -2,12 +2,15 @@ import tensorflow as tf
 
 import numpy as np
 import base64, io, time, gym
-import functools
 
-tf.enable_eager_execution() 
+tf.compat.v1.enable_eager_execution() 
 
-runCartPole = True
-runPong = False
+runCartPole = False
+runPong = True
+
+Conv2D = tf.keras.layers.Conv2D
+Flatten = tf.keras.layers.Flatten
+Dense = tf.keras.layers.Dense
 
 ### Define the agent's action function ###
 
@@ -105,7 +108,9 @@ def compute_loss(logits, actions, rewards):
 def train_step(model, optimizer, observations, actions, discounted_rewards):
   with tf.GradientTape() as tape:
       # Forward propagate through the agent network
+      print('observations', observations.shape)
       logits = model(observations)
+      print('logits', logits)
 
       '''TODO: call the compute_loss function to compute the loss'''
       loss = compute_loss(logits, actions, discounted_rewards) # TODO
@@ -152,9 +157,9 @@ def test_model(test_env, transform_observation, new_model):
 # Defines a feed-forward neural network
 def create_cartpole_model(input_size, output_size):
   model = tf.keras.models.Sequential()
-  model.add(tf.keras.layers.Dense(128, input_dim=input_size, activation='relu'))
-  model.add(tf.keras.layers.Dense(52, activation='relu'))
-  model.add(tf.keras.layers.Dense(output_size, activation='linear'))
+  model.add(Dense(128, input_dim=input_size, activation='relu'))
+  model.add(Dense(52, activation='relu'))
+  model.add(Dense(output_size, activation='linear'))
 
   return model
 
@@ -184,7 +189,7 @@ if runCartPole:
   # instantiate cartpole agent
   cartpole_model = create_cartpole_model(env.observation_space.shape[0], n_actions)
 
-  MAX_ITERS = 200
+  MAX_ITERS = 20
 
   for i_episode in range(MAX_ITERS):
 
@@ -235,30 +240,18 @@ if runCartPole:
 ### Define the Pong agent ###
 
 # Defines a CNN for the Pong agent
-def create_pong_model():
-  model = tf.keras.models.Sequential([
-    # Convolutional layers
-    # First, 16 7x7 filters and 4x4 stride
-    Conv2D(filters=16, kernel_size=7, strides=4),
+def create_pong_model(input_shape, output_size):
+  print('input_shape', input_shape)
+  model = tf.keras.models.Sequential()
+  model.add(Conv2D(input_shape=input_shape, filters=16, kernel_size=7, \
+    strides=(4, 4), activation='relu'))
+  model.add(Conv2D(filters=32, kernel_size=5, \
+    strides=(2, 2), activation='relu'))
+  model.add(Conv2D(filters=48, kernel_size=3, \
+    strides=(2, 2), activation='relu'))
+  model.add(Flatten())
+  model.add(Dense(output_size, activation='linear'))
 
-    # TODO: define convolutional layers with 32 5x5 filters and 2x2 stride
-    Conv2D(filters=32, kernel_size=5, strides=2), # TODO
-    # Conv2D('''TODO'''),
-
-    # TODO: define convolutional layers with 48 3x3 filters and 2x2 stride
-    Conv2D(filters=48, kernel_size=3, strides=2), # TODO
-    # Conv2D('''TODO'''),
-
-    Flatten(),
-    
-    # Fully connected layer and output
-    Dense(units=64, activation='relu'),
-    # TODO: define the output dimension of the last Dense layer. 
-    # Pay attention to the space the agent needs to act in
-    Dense(units=n_actions, activation=None) # TODO
-    # Dense('''TODO''')
-  
-  ])
   return model
 
 ### Pong reward function ###
@@ -306,12 +299,6 @@ if runPong:
   n_actions = env.action_space.n
   print("Number of possible actions that the agent can choose from =", n_actions)
 
-  # Functionally define layers for convenience
-  # All convolutional layers will have ReLu activation
-  Conv2D = functools.partial(tf.keras.layers.Conv2D, padding='same', activation='relu')
-  Flatten = tf.keras.layers.Flatten
-  Dense = tf.keras.layers.Dense
-
   observation = env.reset()
   for i in range(30):
     observation, _,_,_ = env.step(0)
@@ -320,10 +307,12 @@ if runPong:
   ### Training Pong ###
 
   # Hyperparameters
-  MAX_ITERS = 10000 # increase the maximum number of episodes, since Pong is more complex!
+  MAX_ITERS = 10 # increase the maximum number of episodes, since Pong is more complex!
+
+  pong_shape = (80, 80, 1)
 
   # Model and optimizer
-  pong_model = create_pong_model()
+  pong_model = create_pong_model(pong_shape, n_actions)
   learning_rate=1e-4
   optimizer = tf.keras.optimizers.Adam(learning_rate)
 
@@ -358,6 +347,8 @@ if runPong:
             # determine total reward and keep a record of this
             total_reward = sum(memory.rewards)
             print('reward', total_reward)
+            print('memory.observations', np.stack(memory.observations, 0).shape)
+            # print('observation', np.stack(memory.observations, 0)[0])
 
             # begin training
             train_step(pong_model, 
@@ -373,7 +364,7 @@ if runPong:
         previous_frame = current_frame
 
   # Test
-  new_model = create_pong_model()
+  new_model = create_pong_model(pong_shape, n_actions)
   new_model.compile(optimizer, metrics = ['mse'])
   new_model = save_weights(new_model, pong_model, ENV_NAME)
 
