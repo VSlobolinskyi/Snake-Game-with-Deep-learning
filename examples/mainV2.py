@@ -38,14 +38,14 @@ policy = EpsGreedyQPolicy()
 sarsa = SARSAAgent(model = model, policy = policy, nb_actions = env.action_space.n)
 sarsa.compile('adam', metrics = ['mse'])
 
-sarsa.load_weights('examples\output\sarsa_weights.h5f')
+sarsa.load_weights('examples\output\\v2_sarsa_weights.h5f')
 
 if False:
     sarsa.fit(env, nb_steps = 50000, visualize = False, verbose = 1)
     scores = sarsa.test(env, nb_episodes = 100, visualize= False)
     print('Average score over 100 test games:{}'.format(np.mean(scores.history['episode_reward'])))
 
-    sarsa.save_weights('examples\output\sarsa_weights.h5f', overwrite=True)
+    sarsa.save_weights('examples\output\\v2_sarsa_weights.h5f', overwrite=True)
 
 # _ = sarsa.test(env, nb_episodes = 2, visualize= True)
 

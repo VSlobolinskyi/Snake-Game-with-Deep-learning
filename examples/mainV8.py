@@ -2,8 +2,10 @@ import tensorflow as tf
 
 import numpy as np
 import base64, io, time, gym
+import time
 
-tf.compat.v1.enable_eager_execution() 
+tf.compat.v1.enable_eager_execution()
+tf.keras.backend.set_floatx('float64')
 
 runCartPole = False
 runPong = True
@@ -26,11 +28,14 @@ def choose_action(model, observation):
   observation = np.expand_dims(observation, axis=0)
 
   '''TODO: feed the observations through the model to predict the log probabilities of each possible action.'''
+  # print('observation', observation)
   logits = model.predict(observation) # TODO
   # logits = model.predict('''TODO''')
+  # print('logits', logits)
   
   # pass the log probabilities through a softmax to compute true probabilities
   prob_weights = tf.nn.softmax(logits).numpy()
+  # print('prob_weights', prob_weights)
   
   '''TODO: randomly sample from the prob_weights to pick an action.
   Hint: carefully consider the dimensionality of the input probabilities (vector) and the output action (scalar)'''
@@ -65,8 +70,12 @@ class Memory:
 
 # Helper function that normalizes an np.array x
 def normalize(x):
+  # print('normalize x', x)
   x -= np.mean(x)
-  x /= np.std(x)
+  std = np.std(x)
+  if std == 0.0:
+    std = 1.0
+  x /= std
   return x.astype(np.float32)
 
 # Compute normalized, discounted, cumulative rewards (i.e., return)
@@ -79,6 +88,9 @@ def discount_rewards(rewards, gamma=0.95):
   discounted_rewards = np.zeros_like(rewards)
   R = 0
   for t in reversed(range(0, len(rewards))):
+      # NEW: Reset the sum if the reward is not 0 (the game has ended!)
+      if rewards[t] != 0:
+        R = 0
       # update the total discounted reward
       R = R * gamma + rewards[t]
       discounted_rewards[t] = R
@@ -108,9 +120,9 @@ def compute_loss(logits, actions, rewards):
 def train_step(model, optimizer, observations, actions, discounted_rewards):
   with tf.GradientTape() as tape:
       # Forward propagate through the agent network
-      print('observations', observations.shape)
+      # print('observations', observations.shape)
       logits = model(observations)
-      print('logits', logits)
+      # print('logits', logits)
 
       '''TODO: call the compute_loss function to compute the loss'''
       loss = compute_loss(logits, actions, discounted_rewards) # TODO
@@ -135,7 +147,7 @@ def test_model(test_env, transform_observation, new_model):
 
     done = False
     i = 0
-    while not done:
+    while True:
         test_env.render()
         observation = transform_observation(current_frame, previous_frame)
         observation = np.expand_dims(observation, axis=0)
@@ -189,7 +201,7 @@ if runCartPole:
   # instantiate cartpole agent
   cartpole_model = create_cartpole_model(env.observation_space.shape[0], n_actions)
 
-  MAX_ITERS = 20
+  MAX_ITERS = 500
 
   for i_episode in range(MAX_ITERS):
 
@@ -254,27 +266,6 @@ def create_pong_model(input_shape, output_size):
 
   return model
 
-### Pong reward function ###
-
-# Compute normalized, discounted rewards for Pong (i.e., return)
-# Arguments:
-#   rewards: reward at timesteps in episode
-#   gamma: discounting factor. Note increase to 0.99 -- rate of depreciation will be slower.
-# Returns:
-#   normalized discounted reward
-def discount_rewards(rewards, gamma=0.99): 
-  discounted_rewards = np.zeros_like(rewards)
-  R = 0
-  for t in reversed(range(0, len(rewards))):
-      # NEW: Reset the sum if the reward is not 0 (the game has ended!)
-      if rewards[t] != 0:
-        R = 0
-      # update the total discounted reward as before
-      R = R * gamma + rewards[t]
-      discounted_rewards[t] = R
-      
-  return normalize(discounted_rewards)
-
 def preprocess_pong(image):
     I = image[35:195] # Crop
     I = I[::2, ::2, 0] # Downsample width and height by a factor of 2
@@ -307,7 +298,7 @@ if runPong:
   ### Training Pong ###
 
   # Hyperparameters
-  MAX_ITERS = 10 # increase the maximum number of episodes, since Pong is more complex!
+  MAX_ITERS = 20 # increase the maximum number of episodes, since Pong is more complex!
 
   pong_shape = (80, 80, 1)
 
@@ -323,6 +314,7 @@ if runPong:
     # Restart the environment
     observation = env.reset()
     previous_frame = preprocess_pong(observation)
+    start_time = time.time()
 
     while True:
         # Pre-process image 
@@ -346,8 +338,9 @@ if runPong:
         if done:
             # determine total reward and keep a record of this
             total_reward = sum(memory.rewards)
-            print('reward', total_reward)
-            print('memory.observations', np.stack(memory.observations, 0).shape)
+            end_time = time.time()
+            print('episode {} score {} time {}'.format(i_episode, total_reward, round(end_time - start_time, 2)))
+            # print('memory.observations', np.stack(memory.observations, 0).shape)
             # print('observation', np.stack(memory.observations, 0)[0])
 
             # begin training
@@ -365,7 +358,7 @@ if runPong:
 
   # Test
   new_model = create_pong_model(pong_shape, n_actions)
-  new_model.compile(optimizer, metrics = ['mse'])
+  new_model.compile(optimizer, loss="mse", metrics = ['mse'])
   new_model = save_weights(new_model, pong_model, ENV_NAME)
 
-  test_model(env, prapare_pong_observation)
+  test_model(env, prapare_pong_observation, new_model)
