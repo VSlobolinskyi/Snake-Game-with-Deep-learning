@@ -137,7 +137,7 @@ class DQNAgent:
                 i += 1
                 if done:                   
                     end_time = time.time()
-                    print("episode: {}/{}, score: {}, e: {:.2}".format(e, self.EPISODES, i, self.epsilon))
+                    print("episode: {}/{}, score: {}, e: {:.2}, time: {:.2}".format(e, self.EPISODES, i, self.epsilon, end_time - start_time))
                     if i == 500:
                         wins += 1
                     else:
@@ -164,7 +164,7 @@ class DQNAgent:
                 state = np.reshape(next_state, [1, self.state_size])
                 i += 1
                 if done:
-                    print("episode: {}/{}, score: {}".format(e, self.EPISODES, i))
+                    print("episode: {}/{}, score: {}".format(e, episodes, i))
                     break
 
 if __name__ == "__main__":
@@ -177,4 +177,4 @@ if __name__ == "__main__":
     if shouldTrain:
         agent.run()
     if shouldTest:
-        agent.test(20)
+        agent.test(10)

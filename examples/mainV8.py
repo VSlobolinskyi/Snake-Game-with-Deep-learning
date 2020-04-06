@@ -166,7 +166,7 @@ def test_model(test_env, transform_observation, new_model):
         current_frame, reward, done, _ = test_env.step(action)
         i += 1
         if done:
-            print("episode: {}/{}, score: {}".format(e, 20, i))
+            print("episode: {}/{}, score: {}".format(e, 20, reward))
             break
 
   return new_model
@@ -307,7 +307,7 @@ if runPong:
   ### Training Pong ###
 
   # Hyperparameters
-  MAX_ITERS = 10 # increase the maximum number of episodes, since Pong is more complex!
+  MAX_ITERS = 1000000 # increase the maximum number of episodes, since Pong is more complex!
 
   pong_shape = (80, 80, 1)
 
