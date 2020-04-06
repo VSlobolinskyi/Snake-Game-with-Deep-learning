@@ -6,6 +6,8 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import random
 import gym
 import numpy as np
+import tensorflow as tf
+import time
 from collections import deque
 from keras.models import Model, load_model
 from keras.layers import Input, Dense
@@ -35,8 +37,8 @@ def OurModel(input_shape, action_space):
     return model
 
 class DQNAgent:
-    def __init__(self):
-        self.env = gym.make('CartPole-v1')
+    def __init__(self, env_name):
+        self.env = gym.make(env_name)
         # by default, CartPole-v1 has max episode steps = 500
         self.state_size = self.env.observation_space.shape[0]
         self.action_size = self.env.action_space.n
@@ -120,6 +122,7 @@ class DQNAgent:
             state = np.reshape(state, [1, self.state_size])
             done = False
             i = 0
+            start_time = time.time()
             while not done:
                 # self.env.render()
                 action = self.act(state)
@@ -133,6 +136,7 @@ class DQNAgent:
                 state = next_state
                 i += 1
                 if done:                   
+                    end_time = time.time()
                     print("episode: {}/{}, score: {}, e: {:.2}".format(e, self.EPISODES, i, self.epsilon))
                     if i == 500:
                         wins += 1
@@ -144,10 +148,11 @@ class DQNAgent:
                         return
                 self.replay()
 
-    def test(self):
-        print("Loading trained model as cartpole-dqn.h5")
-        self.load(weights_filename)
-        for e in range(self.EPISODES):
+    def test(self, episodes):
+        if os.path.isfile(weights_filename):
+            print("Loading trained model as cartpole-dqn.h5")
+            self.load(weights_filename)
+        for e in range(episodes):
             state = self.env.reset()
             state = np.reshape(state, [1, self.state_size])
             done = False
@@ -163,7 +168,13 @@ class DQNAgent:
                     break
 
 if __name__ == "__main__":
-    weights_filename = "examples\output\cartpole-dqn.h5"
-    agent = DQNAgent()
-    # agent.run()
-    agent.test()
+    shouldTrain = True
+    shouldTest = True
+    print(tf.__version__)
+    env_name='CartPole-v1'
+    weights_filename = "examples\output\{}-{}-dqn.h5".format("v6", env_name)
+    agent = DQNAgent(env_name)
+    if shouldTrain:
+        agent.run()
+    if shouldTest:
+        agent.test(20)

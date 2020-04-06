@@ -3,8 +3,12 @@ import tensorflow as tf
 import numpy as np
 import base64, io, time, gym
 import time
+import os
 
 tf.compat.v1.enable_eager_execution()
+
+from keras.models import load_model
+
 tf.keras.backend.set_floatx('float64')
 
 runCartPole = False
@@ -133,11 +137,16 @@ def train_step(model, optimizer, observations, actions, discounted_rewards):
   # grads = tape.gradient('''TODO''', model.trainable_variables)
   optimizer.apply_gradients(zip(grads, model.trainable_variables))
   
-def save_weights(new_model, trained_model, env_name):
-  trained_model.save_weights('examples\output\{}_dqn_{}_weights.h5f'.format('v8', env_name), overwrite=True)
+def save_weights(new_model, trained_model, folder):
+  trained_model.save_weights(folder, overwrite=True)
   model_weights = trained_model.get_weights()
   new_model.set_weights(model_weights)
   return new_model
+  
+def load_weights(folder, model):
+  if os.path.isdir(os.path.dirname(folder)):
+      print("Loading trained model weights")
+      model.load_weights(folder)
 
 def test_model(test_env, transform_observation, new_model):
   
@@ -298,12 +307,16 @@ if runPong:
   ### Training Pong ###
 
   # Hyperparameters
-  MAX_ITERS = 20 # increase the maximum number of episodes, since Pong is more complex!
+  MAX_ITERS = 10 # increase the maximum number of episodes, since Pong is more complex!
 
   pong_shape = (80, 80, 1)
 
   # Model and optimizer
   pong_model = create_pong_model(pong_shape, n_actions)
+
+  pong_weights_folder = 'examples\output\{}_dqn_{}\weights'.format('v8', ENV_NAME)
+  load_weights(pong_weights_folder, pong_model)
+
   learning_rate=1e-4
   optimizer = tf.keras.optimizers.Adam(learning_rate)
 
@@ -339,7 +352,6 @@ if runPong:
             # determine total reward and keep a record of this
             total_reward = sum(memory.rewards)
             end_time = time.time()
-            print('episode {} score {} time {}'.format(i_episode, total_reward, round(end_time - start_time, 2)))
             # print('memory.observations', np.stack(memory.observations, 0).shape)
             # print('observation', np.stack(memory.observations, 0)[0])
 
@@ -350,6 +362,11 @@ if runPong:
                       actions = np.array(memory.actions),
                       discounted_rewards = discount_rewards(memory.rewards))
             
+            print('episode {}/{} score {} time {}'.format(i_episode, MAX_ITERS, total_reward, round(end_time - start_time, 2)))
+            if i_episode % 5 == 0:
+              print("Saving trained model weights")
+              pong_model.save_weights(pong_weights_folder, overwrite=True)
+
             memory.clear()
             break
 
@@ -359,6 +376,6 @@ if runPong:
   # Test
   new_model = create_pong_model(pong_shape, n_actions)
   new_model.compile(optimizer, loss="mse", metrics = ['mse'])
-  new_model = save_weights(new_model, pong_model, ENV_NAME)
+  new_model = save_weights(new_model, pong_model, pong_weights_folder)
 
   test_model(env, prapare_pong_observation, new_model)
