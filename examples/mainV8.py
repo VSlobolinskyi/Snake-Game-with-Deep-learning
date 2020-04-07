@@ -148,7 +148,7 @@ def load_weights(folder, model):
       print("Loading trained model weights")
       model.load_weights(folder)
 
-def test_model(test_env, transform_observation, new_model):
+def test_model(test_env, transform_observation, new_model, sleep):
   
   for e in range(20):
     current_frame = test_env.reset()
@@ -168,6 +168,7 @@ def test_model(test_env, transform_observation, new_model):
         if done:
             print("episode: {}/{}, score: {}".format(e, 20, reward))
             break
+        time.sleep(sleep)
 
   return new_model
 
@@ -299,15 +300,10 @@ if runPong:
   n_actions = env.action_space.n
   print("Number of possible actions that the agent can choose from =", n_actions)
 
-  observation = env.reset()
-  for i in range(30):
-    observation, _,_,_ = env.step(0)
-  observation_pp = preprocess_pong(observation)
-
   ### Training Pong ###
 
   # Hyperparameters
-  MAX_ITERS = 1000000 # increase the maximum number of episodes, since Pong is more complex!
+  MAX_ITERS = 1 # increase the maximum number of episodes, since Pong is more complex!
 
   pong_shape = (80, 80, 1)
 
@@ -378,4 +374,4 @@ if runPong:
   new_model.compile(optimizer, loss="mse", metrics = ['mse'])
   new_model = save_weights(new_model, pong_model, pong_weights_folder)
 
-  test_model(env, prapare_pong_observation, new_model)
+  test_model(env, prapare_pong_observation, new_model, 0.02)
