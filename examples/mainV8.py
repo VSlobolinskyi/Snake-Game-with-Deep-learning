@@ -303,7 +303,7 @@ if runPong:
   ### Training Pong ###
 
   # Hyperparameters
-  MAX_ITERS = 1 # increase the maximum number of episodes, since Pong is more complex!
+  MAX_ITERS = 100000 # increase the maximum number of episodes, since Pong is more complex!
 
   pong_shape = (80, 80, 1)
 
