@@ -156,6 +156,7 @@ def test_model(test_env, transform_observation, new_model, sleep):
 
     done = False
     i = 0
+    summ_reward = 0.0
     while True:
         test_env.render()
         observation = transform_observation(current_frame, previous_frame)
@@ -164,9 +165,10 @@ def test_model(test_env, transform_observation, new_model, sleep):
 
         previous_frame = current_frame
         current_frame, reward, done, _ = test_env.step(action)
+        summ_reward += reward
         i += 1
         if done:
-            print("episode: {}/{}, score: {}".format(e, 20, reward))
+            print("episode: {}/{}, score: {}".format(e, 20, summ_reward))
             break
         time.sleep(sleep)
 
@@ -358,7 +360,7 @@ if runPong:
                       actions = np.array(memory.actions),
                       discounted_rewards = discount_rewards(memory.rewards))
             
-            print('episode {}/{} score {} time {}'.format(i_episode, MAX_ITERS, total_reward, round(end_time - start_time, 2)))
+            print('episode {}/{} score {} time {} records {}'.format(i_episode, MAX_ITERS, total_reward, round(end_time - start_time, 2), len(memory.observations)))
             if i_episode % 5 == 0:
               print("Saving trained model weights")
               pong_model.save_weights(pong_weights_folder, overwrite=True)
