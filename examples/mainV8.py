@@ -364,6 +364,7 @@ if runPong:
             if i_episode % 5 == 0:
               print("Saving trained model weights")
               pong_model.save_weights(pong_weights_folder, overwrite=True)
+              print("Model weights saved")
 
             memory.clear()
             break
