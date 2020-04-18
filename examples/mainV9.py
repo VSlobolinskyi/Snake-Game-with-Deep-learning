@@ -225,6 +225,7 @@ if runPong:
 
   # Hyperparameters
   MAX_ITERS = 1000000 # increase the maximum number of episodes, since Pong is more complex!
+  TRAIN_ITERS = 10
 
   pong_shape = (80, 40, 1)
 
@@ -273,13 +274,17 @@ if runPong:
             # print('observation', np.stack(memory.observations, 0)[0])
 
             # begin training
-            train_step(pong_model, 
-                      optimizer, 
-                      observations = np.stack(memory.observations, 0), 
-                      actions = np.array(memory.actions),
-                      discounted_rewards = discount_rewards(memory.rewards))
+            train_star_time = time.time()
+            for k in range(TRAIN_ITERS):
+              train_step(pong_model, 
+                        optimizer, 
+                        observations = np.stack(memory.observations, 0), 
+                        actions = np.array(memory.actions),
+                        discounted_rewards = discount_rewards(memory.rewards))
+            train_end_time = time.time()
             
-            print('episode {}/{} score {} time {} records {}'.format(i_episode, MAX_ITERS, total_reward, round(end_time - start_time, 2), len(memory.observations)))
+            print('episode {}/{} score {} time {} training time {} records {}'.format(i_episode, MAX_ITERS, total_reward, \
+              round(end_time - start_time, 2), round(train_end_time - train_star_time, 2), len(memory.observations)))
             if i_episode % 5 == 0:
               print("Saving trained model weights")
               pong_model.save_weights(pong_weights_folder, overwrite=True)
