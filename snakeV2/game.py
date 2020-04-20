@@ -60,7 +60,7 @@ class Env:
     random.seed(seed)
 
   def get_observation_space(self):
-    return self.field_width, self.field_height
+    return self.field_width, self.field_height, 1
 
   def get_action_space_count(self):
     return 4

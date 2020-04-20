@@ -2,7 +2,7 @@ import numpy as np
 import arcade
 
 class Render:
-  def __init__(self, env, game_step = None, steps = 100, speed = 5, verbose = 0):
+  def __init__(self, env, game_step_function = None, steps = 100, speed = 5, verbose = 0):
     self.verbose = verbose
     if self.verbose == 1:
       print('Render init')
@@ -16,7 +16,7 @@ class Render:
     self.display_height = 500
     self.cell_size = 10
     self.speed = speed
-    self.game_step = game_step
+    self.game_step_function = game_step_function
     self.field_height = env.field_height
     self.field_width = env.field_width
     self.steps = steps
@@ -24,10 +24,10 @@ class Render:
     self.run = True
     arcade.open_window(self.display_width, self.display_height, "SCORE: 0")
     arcade.set_background_color(arcade.color.WHITE)
-    arcade.schedule(self.draw_step, 1 / self.speed )
+    arcade.schedule(self.__draw_step, 1 / self.speed )
     arcade.run()
 
-  def draw_step(self, delta_time):
+  def __draw_step(self, delta_time):
 
     if self.run == False:
       return
@@ -41,10 +41,10 @@ class Render:
 
     self.current_step += 1
 
-    if self.game_step == None:
+    if self.game_step_function == None:
       return
 
-    observation = self.game_step()
+    observation = self.game_step_function()
 
     arcade.start_render()
 
