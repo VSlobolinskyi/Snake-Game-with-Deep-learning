@@ -2,7 +2,6 @@ from game import Env
 from memory import Memory
 from display import Render
 import time
-import pygame
 
 env = Env(0)
 mem = Memory(0)
@@ -21,9 +20,18 @@ start_time = time.time()
 for k in range(6000):
   # print('===================')
   observation, reward, done, info = env.step(env.get_action_space_sample())
-  # print_observation(env, observation)
-  # time.sleep(1)
-  # rend.draw_step(observation, env)
+  if reward != 0.0:
+    print(reward)
+  if done:
+    print('done in', k, 'episodes')
+    break
 
 end_time = time.time()
 print('time {}'.format(round(end_time - start_time, 2)))
+
+def make_step():
+  observation, reward, done, info = env.step(env.get_action_space_sample())
+  return observation
+
+obs = env.reset()
+render = Render(env, make_step)
