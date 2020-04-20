@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 import numpy as np
-import base64, io, time, gym
+import base64, io, gym
 import time
 import os
 
