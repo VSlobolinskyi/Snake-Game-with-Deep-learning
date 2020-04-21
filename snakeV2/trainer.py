@@ -84,9 +84,7 @@ class SnakeExecutor:
     model = tf.keras.models.Sequential()
     model.add(Conv2D(input_shape=self.input_shape, filters=32, kernel_size=7, \
       strides=(4, 4), activation='relu'))
-    model.add(Conv2D(filters=64, kernel_size=5, \
-      strides=(2, 2), activation='relu'))
-    model.add(Conv2D(filters=128, kernel_size=3, \
+    model.add(Conv2D(filters=64, kernel_size=3, \
       strides=(2, 2), activation='relu'))
     model.add(Flatten())
     model.add(Dense(self.output_size, activation='linear'))

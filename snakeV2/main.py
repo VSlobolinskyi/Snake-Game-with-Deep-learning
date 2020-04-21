@@ -22,7 +22,7 @@ def env_step(action):
   return observation, reward, done, info
 
 start_time = time.time()
-executor.run_training(20, init_function=env_init, step_function=env_step)
+executor.run_training(200000, init_function=env_init, step_function=env_step)
 end_time = time.time()
 print('training time {}'.format(round(end_time - start_time, 2)))
 
@@ -38,4 +38,4 @@ def make_step(prev_observation):
   observation, reward, done, info = env.step(action)
   return observation
 
-render = Render(env, make_step, speed=50, steps=500)
+# render = Render(env, make_step, speed=50, steps=500)
