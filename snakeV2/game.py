@@ -21,7 +21,7 @@ UP -> direction = 3
 '''     
 
 class Env:
-  def __init__(self, verbose = 0, complexity=100, iterations=500):
+  def __init__(self, verbose = 0, complexity=100, min_iterations=500, max_iterations=1000):
     self.verbose = verbose
     if self.verbose == 1:
       print('Env init')
@@ -29,7 +29,8 @@ class Env:
     self.field_height = 50
     self.done_reward = 10.0
     self.snake_position = []
-    self.iterations = iterations
+    self.min_iterations = min_iterations
+    self.max_iterations = max_iterations
     # self.reset()
 
   # Resets env
@@ -117,7 +118,7 @@ class Env:
 
       self.snake_start = snake_start
 
-    if self.iteration > self.iterations and self.reward != 0.0 :
+    if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
       self.done = True
 
     if self.verbose == 1:

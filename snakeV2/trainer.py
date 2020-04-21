@@ -3,6 +3,7 @@ from memory import Memory
 import numpy as np
 import time
 import tensorflow as tf
+import os
 
 tf.compat.v1.enable_eager_execution()
 
@@ -15,17 +16,21 @@ Flatten = tf.keras.layers.Flatten
 Dense = tf.keras.layers.Dense
 
 class SnakeExecutor:
-  def __init__(self, input_shape, output_size, verbose = 0):
+  def __init__(self, input_shape, output_size, weights_folder = None, verbose = 0):
     self.verbose = verbose
     if self.verbose == 1:
       print('Executor init')
     self.input_shape = input_shape
     self.output_size = output_size
+    self.weights_folder = 'examples\output\{}_pg_{}\weights'.format('v2', 'snake')
+    if weights_folder != None:
+      self.weights_folder = '{}\weights'.format(weights_folder)
     self.agent = PgAgent(verbose)
     self.memory = Memory(verbose)
     self.model = self.__create_model()
+    self.start_episode = 0
+    self.__load_weights()
     self.agent.init_model(self.model, self.output_size)
-    self.weights_folder = 'examples\output\{}_dqn_{}\weights'.format('v1', 'snake')
     learning_rate=1e-4
     self.optimizer = tf.keras.optimizers.Adam(learning_rate)
 
@@ -54,10 +59,12 @@ class SnakeExecutor:
             actions=acts,
             discounted_rewards=disc)
 
-          if i_episode % saving_steps == 0:
+          if i_episode % saving_steps == saving_steps - 1:
             end_time = time.time()
-            print('episode {}/{} score {} time {} records {}'.format(i_episode, steps, total_reward, \
+            print('episode {}/{} score {} time {} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps-1, total_reward, \
               round(end_time - start_time, 2), len(self.memory.observations)))
+            self.__save_waights()
+            self.__save_eposode(i_episode+1)
             start_time = time.time()
 
           self.memory.clear()
@@ -84,3 +91,30 @@ class SnakeExecutor:
     model.add(Flatten())
     model.add(Dense(self.output_size, activation='linear'))
     return model
+
+  def __save_waights(self):
+    if self.verbose == 1:
+      print("Saving trained model weights")
+    self.model.save_weights(self.weights_folder, overwrite=True)
+    if self.verbose == 1:
+      print("Model weights saved")
+      
+  def __load_weights(self):
+    if os.path.isdir(os.path.dirname(self.weights_folder)):
+      if self.verbose == 1:
+        print("Loading trained model weights")
+      self.model.load_weights(self.weights_folder)
+      self.__load_episode()
+      if self.verbose == 1:
+        print("Model weights loaded")
+
+  def __save_eposode(self, episode):
+    with open('{}\episode.f'.format(os.path.dirname(self.weights_folder)), 'w+') as file:
+      file.write(str(episode))
+
+  def __load_episode(self):
+    file_path = '{}\episode.f'.format(os.path.dirname(self.weights_folder))
+    if os.path.isfile(file_path):
+      with open(file_path, 'r') as file: 
+        str_episode = file.read()
+        self.start_episode = int(str_episode)
