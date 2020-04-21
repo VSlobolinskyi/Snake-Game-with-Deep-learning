@@ -22,11 +22,12 @@ def env_step(action):
   return observation, reward, done, info
 
 start_time = time.time()
-executor.run_training(100000, init_function=env_init, step_function=env_step)
+executor.run_training(20, init_function=env_init, step_function=env_step)
 end_time = time.time()
 print('training time {}'.format(round(end_time - start_time, 2)))
 
 new_model = executor.clone_model()
+# new_model = executor.model
 
 def make_step(prev_observation):
   if prev_observation == None:

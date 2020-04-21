@@ -160,6 +160,10 @@ class Env:
     if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
       self.done = True
 
+    if self.complexity < 4 and self.done and self.reward == 0.0:
+      self.reward = -1.0
+      self.negative_reward += 1.0
+
     if self.verbose == 1:
       print('Snake head new x:{}, y:{}'.format(self.snake_start[0], self.snake_start[1]))
       print('Snake head from position new x:{}, y:{}'.format(self.snake_position[0][0], self.snake_position[0][1]))
