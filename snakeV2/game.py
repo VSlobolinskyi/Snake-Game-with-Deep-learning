@@ -31,6 +31,7 @@ class Env:
     self.snake_position = []
     self.min_iterations = min_iterations
     self.max_iterations = max_iterations
+    self.complexity = complexity
     # self.reset()
 
   # Resets env

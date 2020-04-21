@@ -16,15 +16,15 @@ Flatten = tf.keras.layers.Flatten
 Dense = tf.keras.layers.Dense
 
 class SnakeExecutor:
-  def __init__(self, input_shape, output_size, weights_folder = None, verbose = 0):
+  def __init__(self, input_shape, output_size, weights_folder_suffix, weights_folder = None, verbose = 0):
     self.verbose = verbose
     if self.verbose == 1:
       print('Executor init')
     self.input_shape = input_shape
     self.output_size = output_size
-    self.weights_folder = 'examples\output\{}_pg_{}\weights'.format('v2', 'snake')
+    self.weights_folder = 'examples\output\{}_pg_{}_{}\weights'.format('v2', 'snake', weights_folder_suffix)
     if weights_folder != None:
-      self.weights_folder = '{}\weights'.format(weights_folder)
+      self.weights_folder = '{}_{}\weights'.format(weights_folder, weights_folder_suffix)
     self.agent = PgAgent(verbose)
     self.memory = Memory(verbose)
     self.model = self.__create_model()
@@ -34,7 +34,7 @@ class SnakeExecutor:
     learning_rate=1e-4
     self.optimizer = tf.keras.optimizers.Adam(learning_rate)
 
-  def run_training(self, steps, saving_steps=10 ,init_function = None, step_function = None):
+  def run_training(self, steps, saving_steps=10, init_function = None, step_function = None):
     if init_function == None or step_function == None:
       return
 
@@ -61,10 +61,10 @@ class SnakeExecutor:
 
           if i_episode % saving_steps == saving_steps - 1:
             end_time = time.time()
-            print('episode {}/{} score {} time {} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps-1, total_reward, \
+            print('episode {}/{} score {} time {} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, total_reward, \
               round(end_time - start_time, 2), len(self.memory.observations)))
             self.__save_waights()
-            self.__save_eposode(i_episode+1)
+            self.__save_eposode(self.start_episode+i_episode+1)
             start_time = time.time()
 
           self.memory.clear()
