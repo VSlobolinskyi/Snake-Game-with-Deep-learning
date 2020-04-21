@@ -22,7 +22,7 @@ def env_step(action):
   return observation, reward, done, info
 
 start_time = time.time()
-executor.run_training(50, init_function=env_init, step_function=env_step)
+executor.run_training(100000, init_function=env_init, step_function=env_step)
 end_time = time.time()
 print('training time {}'.format(round(end_time - start_time, 2)))
 

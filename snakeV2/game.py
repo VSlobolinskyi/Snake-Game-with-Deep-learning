@@ -4,12 +4,17 @@ import numpy as np
 
 '''
 complexity:
-apple and snake head ignoring all collisions -> = 0
-0 + collisions with borders ->  1
-1 + snake fixed body -> direction = 2
-2 + snake growing body -> direction = 3
-3 + snake body collisions -> direction = 4
-all possible -> 100
+apple apperas on the same positon
+  and snake appears in range of 5 cells
+  and snake has no body
+  and snake head ignoring all collisions -> = 0
+0 + snake appears in range of 10 cells -> 1
+1 + snake appears anywhere -> 2
+2 + apple appears anywhere -> 3
+3 + collisions with borders ->  4
+4 + snake has fixed body size -> 5
+5 + snake body grows when snake eats apple -> 6
+6 + snake body collisions == all possible -> 100
 '''   
 
 '''
@@ -21,7 +26,7 @@ UP -> direction = 3
 '''     
 
 class Env:
-  def __init__(self, verbose = 0, complexity=100, min_iterations=500, max_iterations=1000):
+  def __init__(self, complexity=100, min_iterations=500, max_iterations=1000, verbose = 0):
     self.verbose = verbose
     if self.verbose == 1:
       print('Env init')
@@ -75,8 +80,29 @@ class Env:
   def __make_starting_positions(self):
     self.snake_position.clear()
     self.score = random.randrange(5, 25)
-    snake_start_x = random.randrange(self.score+1, self.field_width-2)
-    snake_start_y = random.randrange(1, self.field_height-2)
+    if self.complexity < 5:
+      self.score = 0
+
+    snake_start_min_x = self.score+1
+    snake_start_min_y = 1
+    snake_start_max_x = self.field_width-2
+    snake_start_max_y = self.field_height-2
+
+    if self.complexity < 2:
+      snake_start_min_x = 25 - 5
+      snake_start_max_x = 25 + 5
+      snake_start_min_y = 25 - 5
+      snake_start_max_y = 25 + 5
+
+    snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x)
+    snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y)
+
+    if self.complexity < 3:
+      if snake_start_x == 25:
+        snake_start_x += 1
+      if snake_start_y == 25:
+        snake_start_x += 1
+
     self.snake_start = [snake_start_x, snake_start_y]
     for i in range(self.score):
         self.snake_position.append([snake_start_x-(i), snake_start_y])
@@ -86,6 +112,10 @@ class Env:
         self.snake_position[1][0], self.snake_position[1][1]))
 
   def __make_new_apple_position(self):
+    if self.complexity < 3:
+      self.apple_position = [25, 25]
+      return
+
     self.apple_position = [self.snake_start[0], self.snake_start[1]]
     while self.apple_position in self.snake_position:
         self.apple_position = [random.randrange(1, self.field_width-2), random.randrange(1, self.field_height-2)]
@@ -96,9 +126,15 @@ class Env:
     if self.verbose == 1:
       print('Snake head old x:{}, y:{}'.format(self.snake_start[0], self.snake_start[1]))
 
-    if self.__collision_with_boundaries(new_x, new_y) or self.__collision_with_self(new_x, new_y):
+    fail = False
+    fail = fail or (self.complexity > 3 and self.__collision_with_boundaries(new_x, new_y))
+    fail = fail or (self.complexity > 6 and self.__collision_with_self(new_x, new_y))
+
+    if fail:
       self.reward = -1.0
       self.negative_reward += 1.0
+
+    if fail:
       self.__make_starting_positions()
     else:
       snake_start[0] = self.__fix_out_of_field_coordinate(new_x, self.field_width)
@@ -113,10 +149,13 @@ class Env:
         self.snake_position.insert(0, list(snake_start))
         self.snake_position.pop()
 
-      if snake_start == self.apple_position:
-        self.__make_new_apple_position()
-
       self.snake_start = snake_start
+
+      if snake_start == self.apple_position:
+        if self.complexity < 3:
+          self.__make_starting_positions()
+        else:
+          self.__make_new_apple_position()
 
     if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
       self.done = True
@@ -156,13 +195,13 @@ class Env:
 
   def __fill_observation(self):
     self.observation = [[0.0] * self.field_width for i in range(self.field_height)]
-    self.observation[self.snake_start[0]][self.snake_start[1]] = 0.1
     for position in self.snake_position[1:]:
       self.observation[position[0]][position[1]] = 0.2
-    self.observation[self.apple_position[0]][self.apple_position[1]] = 1.0
     for i in range(self.field_width):
       self.observation[i][0] = 0.9
       self.observation[i][self.field_height-1] = 0.9
     for i in range(self.field_height):
       self.observation[0][i] = 0.9
       self.observation[self.field_width-1][i] = 0.9
+    self.observation[self.snake_start[0]][self.snake_start[1]] = 0.1
+    self.observation[self.apple_position[0]][self.apple_position[1]] = 1.0
