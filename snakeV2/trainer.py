@@ -46,12 +46,11 @@ class SnakeExecutor:
         
         if done:
           total_reward = sum(self.memory.rewards)
-          obs = np.stack(self.memory.observations, 0)
-          acts = np.array(self.memory.actions)
+          acts = self.memory.actions
           disc = self.agent.discount_rewards(self.memory.rewards)
           self.agent.train_step( 
             optimizer=self.optimizer, 
-            observations=obs, 
+            observations=self.memory.observations, 
             actions=acts,
             discounted_rewards=disc)
 
@@ -65,6 +64,14 @@ class SnakeExecutor:
           break
 
         observation = new_observation
+
+  def clone_model(self):
+    model = self.__create_model()
+    model.compile(self.optimizer, loss="mse", metrics = ['mse'])
+    model_weights = self.model.get_weights()
+    model.set_weights(model_weights)
+
+    return model
 
   def __create_model(self):
     model = tf.keras.models.Sequential()

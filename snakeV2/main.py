@@ -18,32 +18,23 @@ def env_init():
 def env_step(action):
   observation, reward, done, info = env.step(action)
   observation = np.reshape(observation, (50, 50, 1))
-  # if reward != 0.0:
-  #   print('reward: {}, negative_reward: {}, done: {}'.format(reward, env.negative_reward, done))
 
   return observation, reward, done, info
 
 start_time = time.time()
-executor.run_training(10000, init_function=env_init, step_function=env_step)
+executor.run_training(50, init_function=env_init, step_function=env_step)
 end_time = time.time()
-print('time {}'.format(round(end_time - start_time, 2)))
+print('training time {}'.format(round(end_time - start_time, 2)))
 
-start_time = time.time()
-for k in range(6000):
-  # print('===================')
-  observation, reward, done, info = env.step(env.get_action_space_sample())
-  if reward != 0.0:
-    print(reward)
-  if done:
-    print('done in', k, 'episodes')
-    break
+new_model = executor.clone_model()
 
-end_time = time.time()
-print('time {}'.format(round(end_time - start_time, 2)))
-
-def make_step():
-  observation, reward, done, info = env.step(env.get_action_space_sample())
+def make_step(prev_observation):
+  if prev_observation == None:
+    prev_observation = env.reset()
+  observation = np.reshape(prev_observation, (50, 50, 1))
+  observation = np.expand_dims(observation, axis=0)
+  action = np.argmax(new_model.predict(observation))
+  observation, reward, done, info = env.step(action)
   return observation
 
-obs = env.reset()
-render = Render(env, make_step, speed=100)
+render = Render(env, make_step, speed=2)

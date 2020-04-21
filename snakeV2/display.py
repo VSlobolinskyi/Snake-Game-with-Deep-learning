@@ -22,6 +22,7 @@ class Render:
     self.steps = steps
     self.current_step = 0
     self.run = True
+    self.observation = None
     arcade.open_window(self.display_width, self.display_height, "SCORE: 0")
     arcade.set_background_color(arcade.color.WHITE)
     arcade.schedule(self.__draw_step, 1 / self.speed )
@@ -44,7 +45,8 @@ class Render:
     if self.game_step_function == None:
       return
 
-    observation = self.game_step_function()
+    
+    self.observation = self.game_step_function(self.observation)
 
     arcade.start_render()
 
@@ -52,8 +54,8 @@ class Render:
     
     for i in range(self.field_height):
       for j in range(self.field_width):
-        if observation[j][i] > 0.0:
-          val = observation[j][i]
+        val = self.observation[j][i]
+        if val > 0.0:
           color = self.color_white
           if val == 0.1:
             color = self.color_orange

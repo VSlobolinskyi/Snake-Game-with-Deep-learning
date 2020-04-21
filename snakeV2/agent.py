@@ -70,9 +70,10 @@ class PgAgent:
     
   def train_step(self, optimizer, observations, actions, discounted_rewards):
     with tf.GradientTape() as tape:
-        logits = self.model(observations)
+      observations = np.array(observations)
+      logits = self.model(observations)
 
-        loss = self.__compute_loss(logits, actions, discounted_rewards)
+      loss = self.__compute_loss(logits, actions, discounted_rewards)
 
     grads = tape.gradient(loss, self.model.trainable_variables)
     optimizer.apply_gradients(zip(grads, self.model.trainable_variables))

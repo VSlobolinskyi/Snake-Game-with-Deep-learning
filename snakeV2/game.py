@@ -21,7 +21,7 @@ UP -> direction = 3
 '''     
 
 class Env:
-  def __init__(self, verbose = 0, complexity=100):
+  def __init__(self, verbose = 0, complexity=100, iterations=500):
     self.verbose = verbose
     if self.verbose == 1:
       print('Env init')
@@ -29,6 +29,7 @@ class Env:
     self.field_height = 50
     self.done_reward = 10.0
     self.snake_position = []
+    self.iterations = iterations
     # self.reset()
 
   # Resets env
@@ -40,6 +41,7 @@ class Env:
     self.negative_reward = 0.0
     self.positive_reward = 0.0
     self.__fill_observation()
+    self.iteration = 0
 
     return self.observation
 
@@ -53,6 +55,7 @@ class Env:
 
     self.__move_snake(action)
     self.__fill_observation()
+    self.iteration += 1
     
     return self.observation, self.reward, self.done, self.info
 
@@ -114,7 +117,7 @@ class Env:
 
       self.snake_start = snake_start
 
-    if self.positive_reward >= self.done_reward or self.negative_reward >= self.done_reward:
+    if self.iteration > self.iterations and self.reward != 0.0 :
       self.done = True
 
     if self.verbose == 1:
