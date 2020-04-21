@@ -37,4 +37,4 @@ def make_step(prev_observation):
   observation, reward, done, info = env.step(action)
   return observation
 
-render = Render(env, make_step, speed=10, steps=500)
+render = Render(env, make_step, speed=50, steps=500)

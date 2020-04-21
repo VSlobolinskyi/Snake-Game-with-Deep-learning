@@ -63,7 +63,9 @@ class Render:
             color = self.color_green
           if val == 0.2:
             color = self.color_yellow
-          self.__draw(j, self.field_height - i, color)
+          if val == 0.9:
+            color = self.color_black
+          self.__draw(j, self.field_height - i - 1, color)
 
   def __draw(self, x, y, color):
     arcade.draw_xywh_rectangle_filled(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size, color)

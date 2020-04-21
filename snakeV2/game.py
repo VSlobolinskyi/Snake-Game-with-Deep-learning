@@ -32,7 +32,6 @@ class Env:
     self.min_iterations = min_iterations
     self.max_iterations = max_iterations
     self.complexity = complexity
-    # self.reset()
 
   # Resets env
   def reset(self): 
@@ -76,8 +75,8 @@ class Env:
   def __make_starting_positions(self):
     self.snake_position.clear()
     self.score = random.randrange(5, 25)
-    snake_start_x = random.randrange(self.score, self.field_width)
-    snake_start_y = random.randrange(0, self.field_height)
+    snake_start_x = random.randrange(self.score+1, self.field_width-2)
+    snake_start_y = random.randrange(1, self.field_height-2)
     self.snake_start = [snake_start_x, snake_start_y]
     for i in range(self.score):
         self.snake_position.append([snake_start_x-(i), snake_start_y])
@@ -89,7 +88,7 @@ class Env:
   def __make_new_apple_position(self):
     self.apple_position = [self.snake_start[0], self.snake_start[1]]
     while self.apple_position in self.snake_position:
-        self.apple_position = [random.randrange(0, self.field_width), random.randrange(0, self.field_height)]
+        self.apple_position = [random.randrange(1, self.field_width-2), random.randrange(1, self.field_height-2)]
 
   def __move_snake(self, abs_direction):
     new_x, new_y = self.__move_snake_start(abs_direction, self.snake_start[0], self.snake_start[1])
@@ -127,10 +126,10 @@ class Env:
       print('Snake head from position new x:{}, y:{}'.format(self.snake_position[0][0], self.snake_position[0][1]))
 
   def __fix_out_of_field_coordinate(self, coord, size):
-    if coord < 0:
-      return size - 1
-    if coord >= size:
-      return 0
+    if coord < 1:
+      return size - 2
+    if coord >= size-1:
+      return 1
     return coord
 
   def __move_snake_start(self, abs_direction, x, y):
@@ -151,17 +150,19 @@ class Env:
       return False
 
   def __collision_with_boundaries(self, x, y):
-    if x < 0 or y < 0 or x >= self.field_width or y >= self.field_height:
+    if x < 1 or y < 1 or x >= self.field_width-1 or y >= self.field_height-1:
       return True
     return False
 
   def __fill_observation(self):
     self.observation = [[0.0] * self.field_width for i in range(self.field_height)]
-    # self.observation = [[0.0 for col in range(self.field_height)] for row in range(self.field_width)]
     self.observation[self.snake_start[0]][self.snake_start[1]] = 0.1
     for position in self.snake_position[1:]:
       self.observation[position[0]][position[1]] = 0.2
     self.observation[self.apple_position[0]][self.apple_position[1]] = 1.0
-    # if self.verbose == 1:
-    #   print('apple_position:', self.apple_position)
-    #   print('observation apple_position:', self.observation[self.apple_position[0]][self.apple_position[1]])
+    for i in range(self.field_width):
+      self.observation[i][0] = 0.9
+      self.observation[i][self.field_height-1] = 0.9
+    for i in range(self.field_height):
+      self.observation[0][i] = 0.9
+      self.observation[self.field_width-1][i] = 0.9
