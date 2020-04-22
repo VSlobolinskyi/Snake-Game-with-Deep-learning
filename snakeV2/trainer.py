@@ -18,13 +18,14 @@ Dense = tf.keras.layers.Dense
 Dropout = tf.keras.layers.Dropout
 
 class SnakeExecutor:
-  def __init__(self, input_shape, output_size, weights_folder_suffix, weights_folder = None, verbose = 0):
+  def __init__(self, input_shape, output_size, weights_folder_suffix, version=4, weights_folder = None, verbose = 0):
     self.verbose = verbose
     if self.verbose == 1:
       print('Executor init')
     self.input_shape = input_shape
     self.output_size = output_size
-    self.weights_folder = 'examples\output\{}_pg_{}_{}\weights'.format('v4', 'snake', weights_folder_suffix)
+    self.version = version
+    self.weights_folder = 'examples\output\\v{}_pg_{}_{}\weights'.format(self.version, 'snake', weights_folder_suffix)
     if weights_folder != None:
       self.weights_folder = '{}_{}\weights'.format(weights_folder, weights_folder_suffix)
     self.agent = PgAgent(verbose)
@@ -39,6 +40,10 @@ class SnakeExecutor:
   def run_training(self, steps, saving_steps=10, init_function = None, step_function = None):
     if init_function == None or step_function == None:
       return
+
+    min_reward = 500.0
+    max_reward = -500.0
+    sum_records = 0
 
     start_time = time.time()
 
@@ -61,12 +66,22 @@ class SnakeExecutor:
             actions=acts,
             discounted_rewards=disc)
 
+          if total_reward < min_reward:
+            min_reward = total_reward
+          if total_reward > max_reward:
+            max_reward = total_reward
+
+          sum_records += len(self.memory.observations)
+
           if i_episode % saving_steps == saving_steps - 1:
             end_time = time.time()
-            print('episode {}/{} score {} time {} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, total_reward, \
-              round(end_time - start_time, 2), len(self.memory.observations)))
+            print('episode {}/{} score {}/{} time {} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
+              min_reward, max_reward, round(end_time - start_time, 2), sum_records))
             self.__save_waights()
             self.__save_eposode(self.start_episode+i_episode+1)
+            min_reward = 500.0
+            max_reward = -500.0
+            sum_records = 0
             start_time = time.time()
 
           self.memory.clear()
@@ -93,6 +108,7 @@ class SnakeExecutor:
     return model
 
   def __create_model_v3(self):
+    model = tf.keras.models.Sequential()
     model.add(Conv2D(input_shape=self.input_shape, filters=16, kernel_size=7, \
       strides=(4, 4), activation='relu'))
     model.add(Conv2D(filters=32, kernel_size=5, \
@@ -115,7 +131,13 @@ class SnakeExecutor:
     return model
     
   def __create_model(self):
-    return self.__create_model_v4()
+    if self.version == 2:
+      model = self.__create_model_v2()
+    if self.version == 3:
+      model = self.__create_model_v3()
+    if self.version == 4:
+      model = self.__create_model_v4()
+    return model
 
   def __save_waights(self):
     if self.verbose == 1:
