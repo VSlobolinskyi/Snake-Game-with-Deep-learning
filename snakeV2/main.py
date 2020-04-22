@@ -7,7 +7,8 @@ import time
 env = Env(0, field_width=30, field_height=30)
 input_size = env.get_observation_space()
 output_size = env.get_action_space_count()
-executor = SnakeExecutor(input_size, output_size, str(env.complexity))
+suffix = '{}x{}_{}'.format(env.field_width, env.field_height, env.complexity)
+executor = SnakeExecutor(input_size, output_size, suffix)
 
 def env_init():
   env.seed(1)
