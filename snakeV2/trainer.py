@@ -66,39 +66,47 @@ class SnakeExecutor:
         if done:
           total_reward = sum(self.memory.rewards)
           acts = self.memory.actions
-          self.logger.start('train')
-          disc = self.agent.discount_rewards(self.memory.rewards)
-          self.agent.train_step( 
-            optimizer=self.optimizer, 
-            observations=self.memory.observations, 
-            actions=acts,
-            discounted_rewards=disc)
-          self.logger.stop('train')
 
           if total_reward < min_reward:
             min_reward = total_reward
           if total_reward > max_reward:
             max_reward = total_reward
 
-          sum_records += len(self.memory.observations)
+          # sum_records += len(self.memory.observations)
 
           if i_episode % saving_steps == saving_steps - 1:
-            self.logger.stop('all')
-            print('episode {}/{} score {}/{} time {:.2f} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
-              min_reward, max_reward, self.logger.result['all'], sum_records))
+            sum_records = len(self.memory.observations)
+            self.logger.start('discount rewards')
+            disc = self.agent.discount_rewards(self.memory.rewards)
+            self.logger.stop('discount rewards')
+            self.logger.start('train')
+            for l in range(10):
+              self.agent.train_step( 
+                optimizer=self.optimizer, 
+                observations=self.memory.observations, 
+                actions=acts,
+                discounted_rewards=disc)
+            self.logger.stop('train')
             self.logger.start('save waights')
             self.__save_weights()
             self.__save_eposode(self.start_episode+i_episode+1)
             self.logger.stop('save waights')
+            self.logger.stop('all')
+            
+            print('episode {}/{} score {}/{} time {:.2f} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
+              min_reward, max_reward, self.logger.result['all'], sum_records))
+
             min_reward = 500.0
             max_reward = -500.0
             sum_records = 0
+
             if self.verbose == 2:
               self.logger.print()
+
             self.logger.clear()
+            self.memory.clear()
             self.logger.start('all')
 
-          self.memory.clear()
           break
 
         observation = new_observation

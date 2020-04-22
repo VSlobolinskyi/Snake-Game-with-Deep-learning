@@ -4,7 +4,7 @@ import numpy as np
 
 '''
 complexity:
-apple apperas on the same positon
+apple apperas on the same positon with +/- 2 positions
   and snake appears in range of 5 cells
   and snake has no body
   and snake head ignoring all collisions -> = 0
@@ -89,32 +89,40 @@ class Env:
     snake_start_max_x = self.field_width-2
     snake_start_max_y = self.field_height-2
 
-    if self.complexity < 2:
-      snake_start_min_x = 25 - 5
-      snake_start_max_x = 25 + 5
-      snake_start_min_y = 25 - 5
-      snake_start_max_y = 25 + 5
+    if self.complexity > 2:
+      snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x)
+      snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y)
+      self.snake_start = [snake_start_x, snake_start_y]
+      for i in range(self.score):
+          self.snake_position.append([snake_start_x-(i), snake_start_y])
 
-    snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x)
-    snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y)
+    self.__make_new_apple_position()
+
+    if self.complexity < 2:
+      snake_start_min_x = self.apple_position[0] - 5
+      snake_start_max_x = self.apple_position[0] + 5
+      snake_start_min_y = self.apple_position[1] - 5
+      snake_start_max_y = self.apple_position[1] + 5
 
     if self.complexity < 3:
-      if snake_start_x == 25:
+      snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x)
+      snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y)
+      if snake_start_x == self.apple_position[0]:
         snake_start_x += 1
-      if snake_start_y == 25:
+      if snake_start_y == self.apple_position[1]:
         snake_start_x += 1
+      self.snake_start = [snake_start_x, snake_start_y]
+      self.snake_position.append([snake_start_x, snake_start_y])
 
-    self.snake_start = [snake_start_x, snake_start_y]
-    for i in range(self.score):
-        self.snake_position.append([snake_start_x-(i), snake_start_y])
-    self.__make_new_apple_position()
     if self.verbose == 1:
       print('Starting posiotion snake head x:{}, y:{}, snake second x: {}, y: {}'.format(self.snake_position[0][0], self.snake_position[0][1], \
         self.snake_position[1][0], self.snake_position[1][1]))
 
   def __make_new_apple_position(self):
     if self.complexity < 3:
-      self.apple_position = [25, 25]
+      snake_add_x = random.randrange(-2, 3)
+      snake_add_y = random.randrange(-2, 3)
+      self.apple_position = [int(self.field_width/2) + snake_add_x, int(self.field_height/2) + snake_add_y]
       return
 
     self.apple_position = [self.snake_start[0], self.snake_start[1]]

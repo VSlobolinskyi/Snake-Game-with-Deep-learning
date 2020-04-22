@@ -39,10 +39,10 @@ class PgAgent:
     discounted_rewards = np.zeros_like(rewards)
     R = 0
     for t in reversed(range(0, len(rewards))):
-        if rewards[t] != 0:
-          R = 0
-        R = R * self.gamma + rewards[t]
-        discounted_rewards[t] = R
+      if rewards[t] != 0.0:
+        R = 0.0
+      R = R * self.gamma + rewards[t]
+      discounted_rewards[t] = R
         
     return self.__normalize(discounted_rewards)
 
