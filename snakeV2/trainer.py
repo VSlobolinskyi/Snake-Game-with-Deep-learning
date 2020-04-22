@@ -93,7 +93,8 @@ class SnakeExecutor:
             min_reward = 500.0
             max_reward = -500.0
             sum_records = 0
-            # self.logger.print()
+            if self.verbose == 2:
+              self.logger.print()
             self.logger.clear()
             self.logger.start('all')
 
@@ -142,6 +143,16 @@ class SnakeExecutor:
     model.add(Dropout(0.3))
     model.add(Dense(self.output_size, activation='linear'))
     return model
+
+  def __create_model_v5(self):
+    model = tf.keras.models.Sequential()
+    model.add(Conv2D(input_shape=self.input_shape, filters=30, kernel_size=3, \
+      strides=(2, 2), activation='relu'))
+    model.add(Conv2D(filters=60, kernel_size=3, \
+      strides=(2, 2), activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(self.output_size, activation='linear'))
+    return model
     
   def __create_model(self):
     if self.version == 2:
@@ -150,6 +161,8 @@ class SnakeExecutor:
       model = self.__create_model_v3()
     if self.version == 4:
       model = self.__create_model_v4()
+    if self.version == 5:
+      model = self.__create_model_v5()
     return model
 
   def __save_weights(self):
