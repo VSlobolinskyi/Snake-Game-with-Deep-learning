@@ -4,7 +4,7 @@ from trainer import SnakeExecutor
 import numpy as np
 import time
 
-env = Env(0)
+env = Env(0, field_width=30, field_height=30)
 input_size = env.get_observation_space()
 output_size = env.get_action_space_count()
 executor = SnakeExecutor(input_size, output_size, str(env.complexity))
@@ -12,12 +12,12 @@ executor = SnakeExecutor(input_size, output_size, str(env.complexity))
 def env_init():
   env.seed(1)
   observation = env.reset()
-  observation = np.reshape(observation, (50, 50, 1))
+  observation = np.reshape(observation, (env.field_width, env.field_height, 1))
   return observation
 
 def env_step(action):
   observation, reward, done, info = env.step(action)
-  observation = np.reshape(observation, (50, 50, 1))
+  observation = np.reshape(observation, (env.field_width, env.field_height, 1))
 
   return observation, reward, done, info
 
@@ -32,10 +32,10 @@ new_model = executor.clone_model()
 def make_step(prev_observation):
   if prev_observation == None:
     prev_observation = env.reset()
-  observation = np.reshape(prev_observation, (50, 50, 1))
+  observation = np.reshape(prev_observation, (env.field_width, env.field_height, 1))
   observation = np.expand_dims(observation, axis=0)
   action = np.argmax(new_model.predict(observation))
   observation, reward, done, info = env.step(action)
   return observation
 
-# render = Render(env, make_step, speed=50, steps=500)
+render = Render(env, make_step, speed=50, steps=500)

@@ -12,9 +12,9 @@ class Render:
     self.color_white = arcade.color.WHITE
     self.color_yellow = (255,220,50)
     self.color_orange = (255,165,0)
-    self.display_width = 500
-    self.display_height = 500
     self.cell_size = 10
+    self.display_width = env.field_width * self.cell_size
+    self.display_height = env.field_height * self.cell_size
     self.speed = speed
     self.game_step_function = game_step_function
     self.field_height = env.field_height

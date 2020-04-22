@@ -12,8 +12,10 @@ from keras.models import load_model
 tf.keras.backend.set_floatx('float64')
 
 Conv2D = tf.keras.layers.Conv2D
+MaxPool2D = tf.keras.layers.MaxPool2D
 Flatten = tf.keras.layers.Flatten
 Dense = tf.keras.layers.Dense
+Dropout = tf.keras.layers.Dropout
 
 class SnakeExecutor:
   def __init__(self, input_shape, output_size, weights_folder_suffix, weights_folder = None, verbose = 0):
@@ -22,7 +24,7 @@ class SnakeExecutor:
       print('Executor init')
     self.input_shape = input_shape
     self.output_size = output_size
-    self.weights_folder = 'examples\output\{}_pg_{}_{}\weights'.format('v2', 'snake', weights_folder_suffix)
+    self.weights_folder = 'examples\output\{}_pg_{}_{}\weights'.format('v4', 'snake', weights_folder_suffix)
     if weights_folder != None:
       self.weights_folder = '{}_{}\weights'.format(weights_folder, weights_folder_suffix)
     self.agent = PgAgent(verbose)
@@ -80,7 +82,7 @@ class SnakeExecutor:
 
     return model
 
-  def __create_model(self):
+  def __create_model_v2(self):
     model = tf.keras.models.Sequential()
     model.add(Conv2D(input_shape=self.input_shape, filters=32, kernel_size=7, \
       strides=(4, 4), activation='relu'))
@@ -89,6 +91,31 @@ class SnakeExecutor:
     model.add(Flatten())
     model.add(Dense(self.output_size, activation='linear'))
     return model
+
+  def __create_model_v3(self):
+    model.add(Conv2D(input_shape=self.input_shape, filters=16, kernel_size=7, \
+      strides=(4, 4), activation='relu'))
+    model.add(Conv2D(filters=32, kernel_size=5, \
+      strides=(2, 2), activation='relu'))
+    model.add(Conv2D(filters=48, kernel_size=3, \
+      strides=(2, 2), activation='relu'))
+    model.add(Flatten())
+    model.add(Dense(self.output_size, activation='linear'))
+    return model
+
+  def __create_model_v4(self):
+    model = tf.keras.models.Sequential()
+    model.add(Conv2D(input_shape=self.input_shape, filters=50, kernel_size=7, \
+      strides=(2, 2), kernel_initializer='he_normal', activation='relu'))
+    model.add(MaxPool2D((2, 2)))
+    model.add(Flatten())
+    model.add(Dense(20, activation='relu', kernel_initializer='he_uniform'))
+    model.add(Dropout(0.3))
+    model.add(Dense(self.output_size, activation='linear'))
+    return model
+    
+  def __create_model(self):
+    return self.__create_model_v4()
 
   def __save_waights(self):
     if self.verbose == 1:
