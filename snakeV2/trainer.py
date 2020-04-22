@@ -1,7 +1,7 @@
 from agent import PgAgent
 from memory import Memory
+from memory import TimeLogger
 import numpy as np
-import time
 import tensorflow as tf
 import os
 
@@ -30,6 +30,7 @@ class SnakeExecutor:
       self.weights_folder = '{}_{}\weights'.format(weights_folder, weights_folder_suffix)
     self.agent = PgAgent(verbose)
     self.memory = Memory(verbose)
+    self.logger = TimeLogger()
     self.model = self.__create_model()
     self.start_episode = 0
     self.__load_weights()
@@ -45,26 +46,34 @@ class SnakeExecutor:
     max_reward = -500.0
     sum_records = 0
 
-    start_time = time.time()
+    self.logger.start('all')
 
     for i_episode in range(steps):
       observation = init_function()
 
       while True:
+        self.logger.start('choose action')
         action = self.agent.choose_action(observation)
+        self.logger.stop('choose action')
+        self.logger.start('env step')
         new_observation, reward, done, info = step_function(action)
+        self.logger.stop('env step')
 
+        self.logger.start('add to memory')
         self.memory.add_to_memory(observation, action, reward)
+        self.logger.stop('add to memory')
         
         if done:
           total_reward = sum(self.memory.rewards)
           acts = self.memory.actions
+          self.logger.start('train')
           disc = self.agent.discount_rewards(self.memory.rewards)
           self.agent.train_step( 
             optimizer=self.optimizer, 
             observations=self.memory.observations, 
             actions=acts,
             discounted_rewards=disc)
+          self.logger.stop('train')
 
           if total_reward < min_reward:
             min_reward = total_reward
@@ -74,15 +83,19 @@ class SnakeExecutor:
           sum_records += len(self.memory.observations)
 
           if i_episode % saving_steps == saving_steps - 1:
-            end_time = time.time()
-            print('episode {}/{} score {}/{} time {} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
-              min_reward, max_reward, round(end_time - start_time, 2), sum_records))
-            self.__save_waights()
+            self.logger.stop('all')
+            print('episode {}/{} score {}/{} time {:.2f} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
+              min_reward, max_reward, self.logger.result['all'], sum_records))
+            self.logger.start('save waights')
+            self.__save_weights()
             self.__save_eposode(self.start_episode+i_episode+1)
+            self.logger.stop('save waights')
             min_reward = 500.0
             max_reward = -500.0
             sum_records = 0
-            start_time = time.time()
+            # self.logger.print()
+            self.logger.clear()
+            self.logger.start('all')
 
           self.memory.clear()
           break
@@ -139,7 +152,7 @@ class SnakeExecutor:
       model = self.__create_model_v4()
     return model
 
-  def __save_waights(self):
+  def __save_weights(self):
     if self.verbose == 1:
       print("Saving trained model weights")
     self.model.save_weights(self.weights_folder, overwrite=True)
