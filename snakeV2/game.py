@@ -8,13 +8,14 @@ apple apperas on the middle positon with +/- 2 positions
   and snake appears in range of 5 cells
   and snake has no body
   and snake head ignoring all collisions -> = 0
-0 + apple appears in range of +/- 10 cells from middle -> 1
-1 + snake appears anywhere -> 2
-2 + apple appears anywhere -> 3
-3 + collisions with borders ->  4
-4 + snake has fixed body size -> 5
-5 + snake body grows when snake eats apple -> 6
-6 + snake body collisions == all possible -> 100
+0 + snake appears not on the same line with apple -> 1
+1 + apple appears in range of +/- 10 cells from middle -> 2
+2 + snake appears anywhere -> 3
+3 + apple appears anywhere -> 4
+4 + collisions with borders ->  5
+5 + snake has fixed body size -> 6
+6 + snake body grows when snake eats apple -> 7
+7 + snake body collisions == all possible -> 100
 '''   
 
 '''
