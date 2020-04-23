@@ -87,10 +87,10 @@ class SnakeExecutor:
                 actions=acts,
                 discounted_rewards=disc)
             self.logger.stop('train')
-            self.logger.start('save waights')
+            self.logger.start('save weights')
             self.__save_weights()
             self.__save_eposode(self.start_episode+i_episode+1)
-            self.logger.stop('save waights')
+            self.logger.stop('save weights')
             self.logger.stop('all')
             
             print('episode {}/{} score {}/{} time {:.2f} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \

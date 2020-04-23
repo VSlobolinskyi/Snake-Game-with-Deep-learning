@@ -4,11 +4,11 @@ import numpy as np
 
 '''
 complexity:
-apple apperas on the same positon with +/- 2 positions
+apple apperas on the middle positon with +/- 2 positions
   and snake appears in range of 5 cells
   and snake has no body
   and snake head ignoring all collisions -> = 0
-0 + snake appears in range of 10 cells -> 1
+0 + apple appears in range of +/- 10 cells from middle -> 1
 1 + snake appears anywhere -> 2
 2 + apple appears anywhere -> 3
 3 + collisions with borders ->  4
