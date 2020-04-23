@@ -45,6 +45,7 @@ class SnakeExecutor:
     min_reward = 500.0
     max_reward = -500.0
     sum_records = 0
+    total_reward = 0.0
 
     self.logger.start('all')
 
@@ -63,14 +64,17 @@ class SnakeExecutor:
         self.memory.add_to_memory(observation, action, reward)
         self.logger.stop('add to memory')
         
+        total_reward += reward
+        
         if done:
-          total_reward = sum(self.memory.rewards)
           acts = self.memory.actions
 
           if total_reward < min_reward:
             min_reward = total_reward
           if total_reward > max_reward:
             max_reward = total_reward
+
+          total_reward = 0.0
 
           # sum_records += len(self.memory.observations)
 
