@@ -6,16 +6,16 @@ import numpy as np
 complexity:
 apple apperas on the middle positon with +/- 2 positions
   and snake appears in range of 5 cells
+  and snake appears not on the same line with apple
   and snake has no body
   and snake head ignoring all collisions -> = 0
-0 + snake appears not on the same line with apple -> 1
-1 + apple appears in range of +/- 10 cells from middle -> 2
-2 + snake appears anywhere -> 3
-3 + apple appears anywhere -> 4
-4 + collisions with borders ->  5
-5 + snake has fixed body size -> 6
-6 + snake body grows when snake eats apple -> 7
-7 + snake body collisions == all possible -> 100
+0 + apple appears in range of +/- 10 cells from middle -> 1
+1 + snake appears anywhere -> 2
+2 + apple appears anywhere -> 3
+3 + collisions with borders ->  4
+4 + snake has fixed body size -> 5
+5 + snake body grows when snake eats apple -> 6
+6 + snake body collisions == all possible -> 100
 '''   
 
 '''
@@ -91,8 +91,8 @@ class Env:
     snake_start_max_y = self.field_height-2
 
     if self.complexity > 2:
-      snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x)
-      snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y)
+      snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x+1)
+      snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y+1)
       self.snake_start = [snake_start_x, snake_start_y]
       for i in range(self.score):
           self.snake_position.append([snake_start_x-(i), snake_start_y])
@@ -106,12 +106,12 @@ class Env:
       snake_start_max_y = self.apple_position[1] + 5
 
     if self.complexity < 3:
-      snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x)
-      snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y)
-      if snake_start_x == self.apple_position[0]:
+      snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x+1)
+      snake_start_y = random.randrange(snake_start_min_y, snake_start_max_y+1)
+      while snake_start_x in range(self.apple_position[0]-1,self.apple_position[0]+2):
         snake_start_x += 1
-      if snake_start_y == self.apple_position[1]:
-        snake_start_x += 1
+      while snake_start_y in range(self.apple_position[1]-1,self.apple_position[1]+2):
+        snake_start_y += 1
       self.snake_start = [snake_start_x, snake_start_y]
       self.snake_position.append([snake_start_x, snake_start_y])
 
