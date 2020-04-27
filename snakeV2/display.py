@@ -57,13 +57,13 @@ class Render:
         val = self.observation[j][i]
         if val > 0.0:
           color = self.color_white
-          if val == 0.1:
+          if val == 0.9:
             color = self.color_orange
           if val == 1.0:
             color = self.color_green
           if val == 0.2:
             color = self.color_yellow
-          if val == 0.9:
+          if val == 0.1:
             color = self.color_black
           self.__draw(j, self.field_height - i - 1, color)
 
