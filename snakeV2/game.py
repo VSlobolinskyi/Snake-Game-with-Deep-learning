@@ -120,9 +120,12 @@ class Env:
         self.snake_position[1][0], self.snake_position[1][1]))
 
   def __make_new_apple_position(self):
+    apple_rand = 5
+    if self.complexity < 1:
+      apple_rand = 2
     if self.complexity < 3:
-      snake_add_x = random.randrange(-2, 3)
-      snake_add_y = random.randrange(-2, 3)
+      snake_add_x = random.randrange(-apple_rand, apple_rand+1)
+      snake_add_y = random.randrange(-apple_rand, apple_rand+1)
       self.apple_position = [int(self.field_width/2) + snake_add_x, int(self.field_height/2) + snake_add_y]
       return
 
