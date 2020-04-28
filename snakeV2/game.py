@@ -13,8 +13,8 @@ apple apperas on the middle positon with +/- 2 positions
 1 + snake appears anywhere -> 2
 2 + apple appears anywhere -> 3
 3 + collisions with borders ->  4
-4 + snake has fixed body size -> 5
-5 + snake body grows when snake eats apple -> 6
+4 + snake has fixed body size, starts in range 1-15 -> 5
+5 + snake body grows when snake eats apple, but size always starts from 1 -> 6
 6 + snake body collisions == all possible -> 100
 '''   
 
