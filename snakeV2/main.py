@@ -2,9 +2,8 @@ from game import Env
 from display import Render
 from trainer import SnakeExecutor
 import numpy as np
-import time
 
-env = Env(100, field_width=30, field_height=30)
+env = Env(0, field_width=30, field_height=30)
 input_size = env.get_observation_space()
 output_size = env.get_action_space_count()
 suffix = '{}x{}_{}'.format(env.field_width, env.field_height, env.complexity)
@@ -22,10 +21,7 @@ def env_step(action):
 
   return observation, reward, done, info
 
-start_time = time.time()
 executor.run_training(200000, init_function=env_init, step_function=env_step)
-end_time = time.time()
-print('training time {}'.format(round(end_time - start_time, 2)))
 
 new_model = executor.clone_model()
 # new_model = executor.model

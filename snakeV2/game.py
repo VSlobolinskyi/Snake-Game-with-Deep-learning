@@ -212,10 +212,10 @@ class Env:
     for position in self.snake_position[1:]:
       self.observation[position[0]][position[1]] = 0.2
     for i in range(self.field_width):
-      self.observation[i][0] = 0.9
+      self.observation[i][0] = 0.1
       self.observation[i][self.field_height-1] = 0.1
     for i in range(self.field_height):
-      self.observation[0][i] = 0.9
+      self.observation[0][i] = 0.1
       self.observation[self.field_width-1][i] = 0.1
     self.observation[self.snake_start[0]][self.snake_start[1]] = 0.9
     self.observation[self.apple_position[0]][self.apple_position[1]] = 1.0
