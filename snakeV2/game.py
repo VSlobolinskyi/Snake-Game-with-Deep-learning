@@ -69,8 +69,8 @@ class Env:
     before_distance = self.__calculate_distance()
     self.__move_snake(action)
     self.__fill_observation()
-    self.iteration += 1
     self.__update_distance_reward(self.__calculate_distance() - before_distance)
+    self.iteration += 1
     
     return self.observation, self.reward, self.done, self.info
 
@@ -96,6 +96,8 @@ class Env:
         self.reward = -0.4
         self.negative_reward += -self.reward
         self.go_away_steps = 0
+        if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
+          self.done = True
         return
       if distance_diff > 0.0:
         self.go_away_steps += 1
