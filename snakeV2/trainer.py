@@ -97,7 +97,7 @@ class SnakeExecutor:
             self.logger.stop('save weights')
             self.logger.stop('all')
             
-            print('episode {}/{} score {}/{} time {:.2f} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
+            print('episode {}/{} score {:.1f}/{:.1f} time {:.2f} records {}'.format(self.start_episode+i_episode+1, self.start_episode+steps, \
               min_reward, max_reward, self.logger.result['all'], sum_records))
 
             min_reward = 500.0

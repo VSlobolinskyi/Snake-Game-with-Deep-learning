@@ -4,12 +4,12 @@ import numpy as np
 
 '''
 complexity:
-apple apperas on the middle positon with +/- 2 positions
+apple apperas on the middle positon with +/- 10 positions
   and snake appears in range of 5 cells
   and snake appears not on the same line with apple
   and snake has no body
   and snake head ignoring all collisions -> = 0
-0 + apple appears in range of +/- 10 cells from middle -> 1
+0 + get small negative reward if goes continuesly away from apple during last 5 steps -> 1
 1 + snake appears anywhere -> 2
 2 + apple appears anywhere -> 3
 3 + collisions with borders ->  4
@@ -50,6 +50,8 @@ class Env:
     self.positive_reward = 0.0
     self.__fill_observation()
     self.iteration = 0
+    self.go_away_steps = 0
+    self.done = False
 
     return self.observation
 
@@ -58,12 +60,17 @@ class Env:
     if self.verbose == 1:
       print('Env step')
 
+    if self.done:
+      return None, None, None, None
+
     self.reward = 0.0
     self.done = False
-
+    
+    before_distance = self.__calculate_distance()
     self.__move_snake(action)
     self.__fill_observation()
     self.iteration += 1
+    self.__update_distance_reward(self.__calculate_distance() - before_distance)
     
     return self.observation, self.reward, self.done, self.info
 
@@ -78,6 +85,24 @@ class Env:
 
   def get_action_space_sample(self):
     return random.randrange(0, self.get_action_space_count())
+
+  def __calculate_distance(self):
+    dist = np.linalg.norm(np.array(self.apple_position) - np.array(self.snake_start))
+    return dist
+
+  def __update_distance_reward(self, distance_diff):
+    if self.complexity > 0 and self.reward == 0.0:
+      if self.go_away_steps >= 5:
+        self.reward = -0.4
+        self.negative_reward += -self.reward
+        self.go_away_steps = 0
+        return
+      if distance_diff > 0.0:
+        self.go_away_steps += 1
+      else:
+        self.go_away_steps = 0
+    if self.complexity > 0 and self.reward != 0.0:
+      self.go_away_steps = 0
 
   def __make_starting_positions(self):
     self.snake_position.clear()
@@ -121,8 +146,7 @@ class Env:
 
   def __make_new_apple_position(self):
     apple_rand = 5
-    if self.complexity < 1:
-      apple_rand = 2
+
     if self.complexity < 3:
       snake_add_x = random.randrange(-apple_rand, apple_rand+1)
       snake_add_y = random.randrange(-apple_rand, apple_rand+1)
@@ -145,7 +169,7 @@ class Env:
 
     if fail:
       self.reward = -1.0
-      self.negative_reward += 1.0
+      self.negative_reward += -self.reward
 
     if fail:
       self.__make_starting_positions()
@@ -156,7 +180,7 @@ class Env:
       if snake_start == self.apple_position:
         self.reward = 1.0
         self.score += 1
-        self.positive_reward += 1.0
+        self.positive_reward += self.reward
         self.snake_position.insert(0, list(snake_start))
       else:
         self.snake_position.insert(0, list(snake_start))
@@ -175,7 +199,7 @@ class Env:
 
     if self.complexity < 4 and self.done and self.reward == 0.0:
       self.reward = -1.0
-      self.negative_reward += 1.0
+      self.negative_reward += -self.reward
 
     if self.verbose == 1:
       print('Snake head new x:{}, y:{}'.format(self.snake_start[0], self.snake_start[1]))
