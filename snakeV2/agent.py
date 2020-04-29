@@ -8,7 +8,7 @@ class PgAgent:
     self.verbose = verbose
     if self.verbose == 1:
       print('PgAgent init')
-    self.gamma=0.91
+    self.gamma=0.85
 
   def init_model(self, model, n_actions): 
     if self.verbose == 1:

@@ -93,20 +93,21 @@ class Env:
   def __update_distance_reward(self, distance_diff):
     if self.verbose == 2:
       print('distance_diff:', distance_diff)
-    if self.complexity > 0 and self.reward == 0.0:
-      if self.go_to_steps >= 5:
-        self.reward = 0.3
-        self.positive_reward += self.reward
-        self.go_to_steps = 0
-        if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
-          self.done = True
-        return
-      if distance_diff > 0.0:
-        self.go_to_steps = 0
+    if self.complexity > 0:
+      if self.reward == 0.0:
+        if self.go_to_steps >= 5:
+          self.reward = 0.5
+          self.positive_reward += self.reward
+          self.go_to_steps = 0
+          if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
+            self.done = True
+          return
+        if distance_diff > 0.0:
+          self.go_to_steps = 0
+        else:
+          self.go_to_steps += 1
       else:
-        self.go_to_steps += 1
-    if self.complexity > 0 and self.reward != 0.0:
-      self.go_to_steps = 0
+        self.go_to_steps = 0
 
   def __make_starting_positions(self):
     self.snake_position.clear()
