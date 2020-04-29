@@ -44,7 +44,6 @@ class Render:
 
     if self.game_step_function == None:
       return
-
     
     self.observation = self.game_step_function(self.observation)
 

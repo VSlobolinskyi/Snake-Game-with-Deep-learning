@@ -31,7 +31,7 @@ class Integrator:
     return observation
 
   def run_training(self, complexity, model_version, field_width=30, field_height=30, iterations=200000):
-    self.env = Env(complexity, field_width=field_width, field_height=field_height)
+    self.env = Env(complexity, field_width=field_width, field_height=field_height, verbose=self.verbose)
     input_size = self.env.get_observation_space()
     output_size = self.env.get_action_space_count()
     suffix = '{}x{}_{}'.format(self.env.field_width, self.env.field_height, self.env.complexity)
@@ -39,7 +39,7 @@ class Integrator:
     executor.run_training(iterations, init_function=self._env_init, step_function=self._env_step)
 
   def run_test(self, complexity, model_version, field_width=30, field_height=30, speed=50, iterations=500):
-    self.env = Env(complexity, field_width=field_width, field_height=field_height)
+    self.env = Env(complexity, field_width=field_width, field_height=field_height, verbose=self.verbose)
     input_size = self.env.get_observation_space()
     output_size = self.env.get_action_space_count()
     suffix = '{}x{}_{}'.format(self.env.field_width, self.env.field_height, self.env.complexity)

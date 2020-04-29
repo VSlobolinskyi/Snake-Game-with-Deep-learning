@@ -9,7 +9,7 @@ apple apperas on the middle positon with +/- 10 positions
   and snake appears not on the same line with apple
   and snake has no body
   and snake head ignoring all collisions -> = 0
-0 + get small negative reward if goes continuesly away from apple during last 5 steps -> 1
+0 + get small positive reward if goes continuesly to apple during last 5 steps -> 1
 1 + snake appears anywhere -> 2
 2 + apple appears anywhere -> 3
 3 + collisions with borders ->  4
@@ -50,7 +50,7 @@ class Env:
     self.positive_reward = 0.0
     self.__fill_observation()
     self.iteration = 0
-    self.go_away_steps = 0
+    self.go_to_steps = 0
     self.done = False
 
     return self.observation
@@ -91,20 +91,22 @@ class Env:
     return dist
 
   def __update_distance_reward(self, distance_diff):
+    if self.verbose == 2:
+      print('distance_diff:', distance_diff)
     if self.complexity > 0 and self.reward == 0.0:
-      if self.go_away_steps >= 5:
-        self.reward = -0.4
-        self.negative_reward += -self.reward
-        self.go_away_steps = 0
+      if self.go_to_steps >= 5:
+        self.reward = 0.3
+        self.positive_reward += self.reward
+        self.go_to_steps = 0
         if self.iteration > self.max_iterations or (self.iteration > self.min_iterations and self.reward != 0.0) :
           self.done = True
         return
       if distance_diff > 0.0:
-        self.go_away_steps += 1
+        self.go_to_steps = 0
       else:
-        self.go_away_steps = 0
+        self.go_to_steps += 1
     if self.complexity > 0 and self.reward != 0.0:
-      self.go_away_steps = 0
+      self.go_to_steps = 0
 
   def __make_starting_positions(self):
     self.snake_position.clear()
