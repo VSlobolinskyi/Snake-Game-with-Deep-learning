@@ -91,7 +91,7 @@ class Env:
     return dist
 
   def __update_distance_reward(self, distance_diff):
-    if self.verbose == 2:
+    if self.verbose == 1:
       print('distance_diff:', distance_diff)
     if self.complexity > 0:
       if self.reward == 0.0:
@@ -111,7 +111,10 @@ class Env:
 
   def __make_starting_positions(self):
     self.snake_position.clear()
-    self.score = random.randrange(5, 25)
+    max_score = 25
+    if max_score > self.field_width:
+      max_score = self.field_width - 1
+    self.score = random.randrange(5, max_score)
     if self.complexity < 5:
       self.score = 0
 
@@ -119,6 +122,12 @@ class Env:
     snake_start_min_y = 1
     snake_start_max_x = self.field_width-2
     snake_start_max_y = self.field_height-2
+
+    if snake_start_max_x <= snake_start_min_x:
+      snake_start_max_x = snake_start_min_x
+
+    if self.score > snake_start_max_x - snake_start_min_x:
+      self.score = snake_start_max_x - snake_start_min_x
 
     if self.complexity > 2:
       snake_start_x = random.randrange(snake_start_min_x, snake_start_max_x+1)

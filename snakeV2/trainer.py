@@ -165,6 +165,24 @@ class SnakeExecutor:
     model.add(Flatten())
     model.add(Dense(self.output_size, activation='linear'))
     return model
+
+  def __create_model_v6(self):
+    model = tf.keras.models.Sequential()
+    model.add(Conv2D(input_shape=self.input_shape, filters=16, kernel_size=3, \
+      strides=1, activation='relu', padding="same"))
+    model.add(Conv2D(filters=32, kernel_size=3, \
+      strides=1, activation='relu', padding="same"))
+    model.add(Flatten())
+    model.add(Dense(self.output_size, activation='linear'))
+    return model
+
+  def __create_model_v7(self):
+    model = tf.keras.models.Sequential()
+    model.add(Conv2D(input_shape=self.input_shape, filters=32, kernel_size=5, \
+      strides=1, activation='relu', padding="same"))
+    model.add(Flatten())
+    model.add(Dense(self.output_size, activation='linear'))
+    return model
     
   def __create_model(self):
     if self.version == 2:
@@ -175,6 +193,10 @@ class SnakeExecutor:
       model = self.__create_model_v4()
     if self.version == 5:
       model = self.__create_model_v5()
+    if self.version == 6:
+      model = self.__create_model_v6()
+    if self.version == 7:
+      model = self.__create_model_v7()
     return model
 
   def __save_weights(self):
